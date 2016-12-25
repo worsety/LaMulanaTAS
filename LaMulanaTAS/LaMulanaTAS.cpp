@@ -85,10 +85,12 @@ public:
 	int frame;
 	std::map<int, std::unordered_set<int>> frame_inputs;
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
+	std::map<int, short> frame_rngSet;
 	std::map<std::string, int> name2vk;
 
 	TAS(char *base);
 	bool KeyPressed(int vk);
+	bool rngSet();
 	void IncFrame();
 	void Overlay();
 
@@ -149,10 +151,12 @@ void TAS::LoadTAS()
 	int linenum = 0;
 	std::string line, token;
 	std::ostringstream reason;
+	frame_rngSet.clear();
 	frame_inputs.clear();
 	frame_inputs.emplace(0, std::unordered_set<int>());
 
-	std::regex re_atframe("@([0-9]*)"), re_addframes("\\+([0-9]*)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)");
+	std::regex re_atframe("@([0-9]*)"), re_addframes("\\+([0-9]*)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
+		re_rng("rng=([0-9]+)");
 	try {
 		while (!f.eof())
 		{
@@ -221,6 +225,11 @@ void TAS::LoadTAS()
 					}
 					continue;
 				}
+				if (std::regex_match(token, m, re_rng))
+				{
+					frame_rngSet.emplace(curframe, (short)std::stoi(m[1]));
+					continue;
+				}
 				reason << "Unrecognised expression '" << token << "' on line " << linenum;
 				throw parsing_exception(reason.str());
 			}
@@ -238,6 +247,18 @@ bool TAS::KeyPressed(int vk)
 	if (frame_inputs.end() != iter)
 		return 0 != iter->second.count(vk);
 	return 0;
+}
+
+bool TAS::rngSet()
+{
+	auto iter = --frame_rngSet.upper_bound(frame);
+	if (frame_rngSet.end() != iter)
+	{
+		//MessageBoxA(NULL, std::)
+		*(memory.RNG()) = iter->second; // crashes game..?
+		return iter->second != 0;
+	}
+	return false;
 }
 
 void TAS::IncFrame()
@@ -329,6 +350,7 @@ void __fastcall TASInit(char *base)
 
 SHORT WINAPI TASGetKeyState(_In_ int nVirtKey)
 {
+	tas->rngSet(); // sorry for the mess. TODO: move this call elsewhere.
 	return tas->KeyPressed(nVirtKey) ? (SHORT)0x8000 : GetKeyState(nVirtKey);
 }
 
