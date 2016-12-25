@@ -12,6 +12,11 @@
 #include <sstream>
 #include <regex>
 
+#ifndef _NDEBUG
+#define D3D_DEBUG_INFO
+#endif
+#include "d3d9.h"
+
 /*
 
 @frame
@@ -59,7 +64,17 @@ public:
 
 	short * RNG()
 	{
-		return (short *)(base + 0x2D6C58);
+		return (short *)(base + 0x6D6C58);
+	}
+
+	IDirect3D9 * id3d9()
+	{
+		return *(IDirect3D9**)(base + 0xDB9998);
+	}
+
+	IDirect3DDevice9 * id3d9dev()
+	{
+		return *(IDirect3DDevice9**)(base + 0xDB999C);
 	}
 };
 
@@ -75,6 +90,7 @@ public:
 	TAS(char *base);
 	bool KeyPressed(int vk);
 	void IncFrame();
+	void Overlay();
 
 	void LoadTAS();
 };
@@ -229,6 +245,81 @@ void TAS::IncFrame()
 	frame++;
 }
 
+// If I could use D3DX this would be soooo much easier and faster
+// Intentionally avoiding setting any unnecessary state so we don't have to restore it
+// Only works if filtering is off
+void TAS::Overlay()
+{
+	(*(void(**) (void))(memory.base + 0x6D8F74))();
+
+	std::wostringstream os;
+	os << "Frame " << frame;
+
+	IDirect3DDevice9 *dev = memory.id3d9dev();
+	IDirect3DSurface9 *surface = NULL;
+	IDirect3DVertexBuffer9 *vbuf = NULL;
+	IDirect3DTexture9 *text_tex = NULL;
+	HDC dc = NULL;
+	D3DLOCKED_RECT locked;
+	struct vertex
+	{
+		float x, y, z, w;
+		D3DCOLOR color;
+		float u, v;
+	} *v;
+
+	RECT textbox{ 0, 0, 200, 40 };
+
+	static HFONT font;
+	if (!font)
+		font = CreateFont(18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_RASTER_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FIXED_PITCH, TEXT("Lucida Console"));
+
+
+	dev->CreateTexture(textbox.right, textbox.bottom, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &text_tex, NULL);
+	dev->SetTexture(0, text_tex);
+
+	text_tex->GetSurfaceLevel(0, &surface);
+	surface->GetDC(&dc);
+	SelectObject(dc, font);
+	SetTextColor(dc, 0xfffff);
+	SetBkMode(dc, TRANSPARENT);
+	if (!DrawText(dc, os.str().data(), -1, &textbox, DT_NOPREFIX | DT_SINGLELINE |  DT_LEFT | DT_BOTTOM))
+		return;
+	surface->ReleaseDC(dc);
+	surface->Release();
+
+	text_tex->LockRect(0, &locked, NULL, 0);
+	for (int y = 0; y < textbox.bottom; y++)
+		for (int x = 0; x < textbox.right; x++)
+		{
+			DWORD &pixel = *(DWORD*)((char*)locked.pBits + y * locked.Pitch + x * 4);
+			pixel |= pixel & 0xffffff ? 0xff000000 : 0;
+		}
+	text_tex->UnlockRect(0);
+	text_tex->Release();
+
+	dev->CreateVertexBuffer(sizeof(vertex) * 4, 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1, D3DPOOL_MANAGED, &vbuf, NULL);
+	dev->SetStreamSource(0, vbuf, 0, sizeof *v);
+	vbuf->Lock(0, 0, (void**)&v, 0);
+	memset(v, 0, sizeof(vertex) * 4);
+	D3DVIEWPORT9 viewport;
+	dev->GetViewport(&viewport);
+	for (int i = 0; i < 4; i++)
+	{
+		int right = i & 1 ^ (i >> 1);
+		int down = i >> 1;
+		v[i].x = 10 + right * textbox.right * 2 - 0.5f;
+		v[i].y = viewport.Height - (1 - down) * textbox.bottom * 2 - 10.5f;
+		v[i].u = 1.f * right;
+		v[i].v = 1.f * down;
+		v[i].w = 1;
+		v[i].color = D3DCOLOR_ARGB(224, 255, 255, 255);
+	}
+	vbuf->Unlock();
+	vbuf->Release();
+	dev->DrawPrimitive(D3DPT_TRIANGLEFAN, 0, 2);
+}
+
 TAS *tas = NULL;
 
 void __fastcall TASInit(char *base)
@@ -245,6 +336,11 @@ DWORD WINAPI TASgetTime(void)
 {
 	tas->IncFrame();
 	return timeGetTime();
+}
+
+void TASRender(void)
+{
+	tas->Overlay();
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)

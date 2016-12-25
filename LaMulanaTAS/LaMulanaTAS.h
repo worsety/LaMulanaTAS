@@ -8,6 +8,7 @@ extern "C" {
 	void __fastcall TASInit(char *base);
 	SHORT WINAPI TASGetKeyState(_In_ int nVirtKey);
 	DWORD WINAPI TASgetTime(void);
+	void TASRender(void);
 #ifdef __cplusplus
 }
 #endif

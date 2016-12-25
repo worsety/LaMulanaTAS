@@ -3,3 +3,4 @@ EXPORTS
 	TASInit
 	TASGetKeyState
 	TASgetTime
+	TASRender
