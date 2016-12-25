@@ -10,6 +10,7 @@
 #include <fstream>
 #include <cctype>
 #include <sstream>
+#include <iomanip>
 #include <regex>
 
 #ifndef _NDEBUG
@@ -253,7 +254,7 @@ void TAS::Overlay()
 	(*(void(**) (void))(memory.base + 0x6D8F74))();
 
 	std::wostringstream os;
-	os << "Frame " << frame;
+	os << "Frame " << std::setw(7) << frame << " RNG " << std::setw(5) << *memory.RNG();
 
 	IDirect3DDevice9 *dev = memory.id3d9dev();
 	IDirect3DSurface9 *surface = NULL;
@@ -268,7 +269,7 @@ void TAS::Overlay()
 		float u, v;
 	} *v;
 
-	RECT textbox{ 0, 0, 200, 40 };
+	RECT textbox{ 0, 0, 400, 40 };
 
 	static HFONT font;
 	if (!font)
