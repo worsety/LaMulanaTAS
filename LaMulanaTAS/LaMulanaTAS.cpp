@@ -306,6 +306,9 @@ void TAS::IncFrame()
 	if (iter != frame_actions.end())
 		for (auto x : iter->second)
 			x();
+	// This is pretty weird: the game needs to receive a window message before it'll enable keyboard input.
+	// Just cheat to keep it enabled
+	*(memory.base + 0x6D5820) = 1;
 }
 
 // If I could use D3DX this would be soooo much easier and faster
