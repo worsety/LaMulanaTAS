@@ -12,6 +12,7 @@
 #include <sstream>
 #include <iomanip>
 #include <regex>
+#include <functional>
 
 #ifndef _NDEBUG
 #define D3D_DEBUG_INFO
@@ -27,7 +28,7 @@ save=slot
 load=slot
 rng=value
 showrng
-base=frames
+goto=frame
 
 The possible inputs:
 up,right,down,left
@@ -77,6 +78,21 @@ public:
 	{
 		return *(IDirect3DDevice9**)(base + 0xDB999C);
 	}
+
+	void saveslot(int slot)
+	{
+		((void(*)(int))(base + 0x484F00))(slot);
+	}
+
+	void loadslot(int slot)
+	{
+		static char fakeloadmenu[512];
+		*(int*)(fakeloadmenu + 0x108) = 1;
+		*(short*)(fakeloadmenu + 0xf4) = slot / 5;
+		*(short*)(fakeloadmenu + 0xe0) = slot % 5;
+		((void(*)(void))(base + 0x607E90))(); // clears objects
+		((void(*)(void*))(base + 0x44A960))(fakeloadmenu); // loads save, intended to be called from menu code but it only references these three fields
+	}
 };
 
 class TAS
@@ -85,6 +101,7 @@ public:
 	LaMulanaMemory memory;
 	int frame;
 	std::map<int, std::unordered_set<int>> frame_inputs;
+	std::map<int, std::list<std::function<void()>>> frame_actions;
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
 	std::map<std::string, int> name2vk;
 
@@ -96,7 +113,7 @@ public:
 	void LoadTAS();
 };
 
-TAS::TAS(char *base) : memory(base), frame(0)
+TAS::TAS(char *base) : memory(base), frame(-1)
 {
 	name2vk["up"] = VK_UP;
 	name2vk["right"] = VK_RIGHT;
@@ -153,7 +170,8 @@ void TAS::LoadTAS()
 	frame_inputs.clear();
 	frame_inputs.emplace(0, std::unordered_set<int>());
 
-	std::regex re_atframe("@([0-9]*)"), re_addframes("\\+([0-9]*)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)");
+	std::regex re_atframe("@([0-9]*)"), re_addframes("\\+([0-9]*)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
+		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("load=([0-9]+)"), re_rng("rng=([0-9]+)");
 	try {
 		while (!f.eof())
 		{
@@ -222,6 +240,34 @@ void TAS::LoadTAS()
 					}
 					continue;
 				}
+				if (std::regex_match(token, m, re_goto))
+				{
+					frame_actions.emplace(curframe, std::list<std::function<void()>>());
+					int gotoframe = std::stoi(m[1]);
+					frame_actions.find(curframe)->second.push_back([this, gotoframe]() { frame = gotoframe; });
+					continue;
+				}
+				if (std::regex_match(token, m, re_load))
+				{
+					frame_actions.emplace(curframe, std::list<std::function<void()>>());
+					int slot = std::stoi(m[1]);
+					frame_actions.find(curframe)->second.push_back([this, slot]() { memory.loadslot(slot); });
+					continue;
+				}
+				if (std::regex_match(token, m, re_save))
+				{
+					frame_actions.emplace(curframe, std::list<std::function<void()>>());
+					int slot = std::stoi(m[1]);
+					frame_actions.find(curframe)->second.push_back([this, slot]() { memory.saveslot(slot); });
+					continue;
+				}
+				if (std::regex_match(token, m, re_rng))
+				{
+					frame_actions.emplace(curframe, std::list<std::function<void()>>());
+					int rng = std::stoi(m[1]);
+					frame_actions.find(curframe)->second.push_back([this, rng]() { *memory.RNG() = rng; });
+					continue;
+				}
 				reason << "Unrecognised expression '" << token << "' on line " << linenum;
 				throw parsing_exception(reason.str());
 			}
@@ -241,9 +287,14 @@ bool TAS::KeyPressed(int vk)
 	return 0;
 }
 
+
 void TAS::IncFrame()
 {
 	frame++;
+	auto iter = frame_actions.find(frame);
+	if (iter != frame_actions.end())
+		for (auto x : iter->second)
+			x();
 }
 
 // If I could use D3DX this would be soooo much easier and faster
@@ -284,7 +335,7 @@ void TAS::Overlay()
 	SelectObject(dc, font);
 	SetTextColor(dc, 0xfffff);
 	SetBkMode(dc, TRANSPARENT);
-	if (!DrawText(dc, os.str().data(), -1, &textbox, DT_NOPREFIX | DT_SINGLELINE |  DT_LEFT | DT_BOTTOM))
+	if (!DrawText(dc, os.str().data(), -1, &textbox, DT_NOPREFIX | DT_SINGLELINE | DT_LEFT | DT_BOTTOM))
 		return;
 	surface->ReleaseDC(dc);
 	surface->Release();
@@ -294,7 +345,7 @@ void TAS::Overlay()
 		for (int x = 0; x < textbox.right; x++)
 		{
 			DWORD &pixel = *(DWORD*)((char*)locked.pBits + y * locked.Pitch + x * 4);
-			pixel |= pixel & 0xffffff ? 0xff000000 : 0;
+			pixel = pixel << 8 | 0xffffff;
 		}
 	text_tex->UnlockRect(0);
 	text_tex->Release();
@@ -333,7 +384,7 @@ SHORT WINAPI TASGetKeyState(_In_ int nVirtKey)
 	return tas->KeyPressed(nVirtKey) ? (SHORT)0x8000 : GetKeyState(nVirtKey);
 }
 
-DWORD WINAPI TASgetTime(void)
+DWORD WINAPI TASOnFrame(void)
 {
 	tas->IncFrame();
 	return timeGetTime();
