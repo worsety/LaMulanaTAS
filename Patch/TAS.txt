@@ -1,1 +1,22 @@
-Details of what I changed here when I can be bothered.
+Virtual addresses include the default image base of 0x400000
+
+File	Virtual
+000168			Checksum.  This is definitely wrong, I don't even remember patching it
+0001b4			Relocation table size
+000210			.text virtual size
+000238			.rdata virtual size
+000260			.data virtual size
+0002b0			.reloc virtual size
+0536e8	004542e8	read_keys: Change GetKeyState call to TASGetKeyState
+0a4c09	004a5809	Wrap call to... composition function pointer? In any case the last function that performs any drawing in a frame with TASRender
+0d8f8e	004d9b8e	Change call to read_keys while in game to a wrapper
+0d988e	004da48e	Change call to an early initialisation function to a wrapper
+2abecb	006acacb	TAS init wrapper
+2abf3e	006acb3e	read_keys wrapper, calls TASOnFrame
+2ce142	006cf142	Strings for loading the DLL functions
+340bb0			Additions to relocation table
+
+TODO:
+Probably change the TASOnFrame call to within read_keys because there's another call which is made while guardians are dying (and other times?, I want to remove the keyboard input enabled flag check anyway and apply that only to user keyboard input so some instructions can go
+Remove the code which sets the game to pause when inactive, should be in the function at 0x004DA140
+Work out why there's some frame variance in field transitions.  Hopefully this is loading frames where input is ineffective (despite being read) even in transition walks and can easily be detected
