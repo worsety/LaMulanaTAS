@@ -177,7 +177,7 @@ void TAS::LoadTAS()
 	frame_inputs.emplace(0, std::unordered_set<int>());
 
 	std::regex re_atframe("@([0-9]*)"), re_addframes("\\+([0-9]*)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
-		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("save=([0-9]+)"), re_rng("rng=([0-9]+)(-([0-9]+))");
+		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("save=([0-9]+)"), re_rng("rng=([0-9]+)(-([0-9]+))?");
 	try {
 		while (!f.eof())
 		{
