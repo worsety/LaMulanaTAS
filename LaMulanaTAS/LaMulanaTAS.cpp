@@ -111,6 +111,8 @@ public:
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
 	std::map<std::string, int> name2vk;
 
+	bool k_ff;
+
 	TAS(char *base);
 	bool KeyPressed(int vk);
 	void IncFrame();
@@ -309,6 +311,15 @@ void TAS::IncFrame()
 	// This is pretty weird: the game needs to receive a window message before it'll enable keyboard input.
 	// Just cheat to keep it enabled
 	*(memory.base + 0x6D5820) = 1;
+	// P toggles 16x
+	bool ff = !!(GetKeyState('P') & 0x8000);
+	if (!k_ff && ff)
+	{
+		((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval ^= D3DPRESENT_INTERVAL_IMMEDIATE;
+		*(memory.base + 0x6D7BAB) = 0; // force device reset
+		*(int*)(memory.base + 0xdbb4d4) ^= -15;
+	}
+	k_ff = ff;
 }
 
 // If I could use D3DX this would be soooo much easier and faster
