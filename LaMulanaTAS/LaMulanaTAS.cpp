@@ -295,9 +295,8 @@ void TAS::LoadTAS()
 bool TAS::KeyPressed(int vk)
 {
 	auto iter = --frame_inputs.upper_bound(frame);
-	if (frame_inputs.end() != iter)
-		return 0 != iter->second.count(vk);
-	return 0;
+	return frame_inputs.end() != iter && 0 != iter->second.count(vk)
+		|| *(memory.base + 0x6D5820) && !!(GetKeyState(vk) & 0x8000);
 }
 
 
@@ -308,9 +307,6 @@ void TAS::IncFrame()
 	if (iter != frame_actions.end())
 		for (auto x : iter->second)
 			x();
-	// This is pretty weird: the game needs to receive a window message before it'll enable keyboard input.
-	// Just cheat to keep it enabled
-	*(memory.base + 0x6D5820) = 1;
 	// P toggles 16x
 	bool ff = !!(GetKeyState('P') & 0x8000);
 	if (!k_ff && ff)
@@ -406,7 +402,7 @@ void __fastcall TASInit(char *base)
 
 SHORT WINAPI TASGetKeyState(_In_ int nVirtKey)
 {
-	return tas->KeyPressed(nVirtKey) ? (SHORT)0x8000 : GetKeyState(nVirtKey);
+	return tas->KeyPressed(nVirtKey) ? 0x8000 : 0;
 }
 
 DWORD WINAPI TASOnFrame(void)
