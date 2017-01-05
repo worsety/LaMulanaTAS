@@ -86,7 +86,7 @@ public:
 		__asm
 		{
 			mov esi, [slot];
-			call [lm_saveslot]
+			call[lm_saveslot]
 		}
 	}
 
@@ -111,7 +111,8 @@ public:
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
 	std::map<std::string, int> name2vk;
 
-	bool k_ff;
+	bool k_ff, k_step, k_run, k_reset, k_reload;
+	bool running, resetting;
 
 	TAS(char *base);
 	bool KeyPressed(int vk);
@@ -121,7 +122,7 @@ public:
 	void LoadTAS();
 };
 
-TAS::TAS(char *base) : memory(base), frame(-1)
+TAS::TAS(char *base) : memory(base), frame(-1), running(true)
 {
 	name2vk["up"] = VK_UP;
 	name2vk["right"] = VK_RIGHT;
@@ -168,6 +169,7 @@ void TAS::LoadTAS()
 	catch (std::exception&)
 	{
 		MessageBox(NULL, L"Couldn't load script.txt", L"TAS error", MB_OK);
+		return;
 	}
 
 	int curframe = 0;
@@ -177,6 +179,7 @@ void TAS::LoadTAS()
 	std::ostringstream reason;
 	frame_inputs.clear();
 	frame_inputs.emplace(0, std::unordered_set<int>());
+	frame_actions.clear();
 
 	std::regex re_atframe("@([0-9]*)"), re_addframes("\\+([0-9]*)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
 		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("save=([0-9]+)"), re_rng("rng=([0-9]+)(-([0-9]+))?");
@@ -294,6 +297,8 @@ void TAS::LoadTAS()
 
 bool TAS::KeyPressed(int vk)
 {
+	if (resetting)
+		return false;
 	auto iter = --frame_inputs.upper_bound(frame);
 	return frame_inputs.end() != iter && 0 != iter->second.count(vk)
 		|| *(memory.base + 0x6D5820) && !!(GetKeyState(vk) & 0x8000);
@@ -302,20 +307,57 @@ bool TAS::KeyPressed(int vk)
 
 void TAS::IncFrame()
 {
+	do
+	{
+		if (GetForegroundWindow() != *(HWND*)(memory.base + 0xDB6FB8))
+			continue;
+		bool step = !!(GetKeyState(VK_OEM_6) & 0x8000);
+		if (!k_step && step)
+		{
+			running = false;
+			k_step = step;
+			break;
+		}
+		k_step = step;
+		bool ff = !!(GetKeyState('P') & 0x8000);
+		bool run = !!(GetKeyState(VK_OEM_4) & 0x8000);
+		bool reload = !!(GetKeyState('R') & 0x8000);
+		bool reset = !!(GetKeyState('T') & 0x8000);
+		if (!k_ff && ff)
+		{
+			running = true;
+			((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+			*(memory.base + 0x6D7BAB) = 0; // force device reset
+			*(int*)(memory.base + 0xdbb4d4) = -15;
+		}
+		if (!k_run && run)
+		{
+			running = true;
+			((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+			*(memory.base + 0x6D7BAB) = 0; // force device reset
+			*(int*)(memory.base + 0xdbb4d4) = 0;
+		}
+		if (!k_reload && reload)
+			LoadTAS();
+		if (!k_reset && reset) {
+			*(int*)(memory.base + 0xDB6FD0) = 7;
+			frame = -2;
+			running = resetting = true;
+		}
+		k_ff = ff; k_run = run; k_reload = reload; k_reset = reset;
+		if (GetKeyState(VK_F4) & 0x8000)
+			running = true; // just for alt-F4
+	} while (!running);
+
 	frame++;
 	auto iter = frame_actions.find(frame);
 	if (iter != frame_actions.end())
 		for (auto x : iter->second)
 			x();
 	// P toggles 16x
-	bool ff = !!(GetKeyState('P') & 0x8000);
-	if (!k_ff && ff)
-	{
-		((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval ^= D3DPRESENT_INTERVAL_IMMEDIATE;
-		*(memory.base + 0x6D7BAB) = 0; // force device reset
-		*(int*)(memory.base + 0xdbb4d4) ^= -15;
-	}
-	k_ff = ff;
+
+	if (frame == 0)
+		resetting = false;
 }
 
 // If I could use D3DX this would be soooo much easier and faster

@@ -29,5 +29,4 @@ N/A	00dbb4d0	TASRender
 N/A	00dbb4d4	sleep delta (-16 to not sleep)
 
 TODO:
-Probably change the TASOnFrame call to within read_keys because there's another call which is made while guardians are dying (and other times?), I want to remove the keyboard input enabled flag check anyway and apply that only to user keyboard input so some instructions can go
 Work out why there's some frame variance in field transitions.  Hopefully this is loading frames where input is ineffective (despite being read) even in transition walks and can easily be detected
