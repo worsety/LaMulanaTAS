@@ -345,9 +345,7 @@ void TAS::IncFrame()
 			running = resetting = true;
 		}
 		k_ff = ff; k_run = run; k_reload = reload; k_reset = reset;
-		if (GetKeyState(VK_F4) & 0x8000)
-			running = true; // just for alt-F4
-	} while (!running);
+	} while (!running && *(int*)(memory.base + 0xDB6FD0) != 5);
 
 	frame++;
 	auto iter = frame_actions.find(frame);
