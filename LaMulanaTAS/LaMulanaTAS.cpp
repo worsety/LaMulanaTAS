@@ -181,7 +181,7 @@ void TAS::LoadTAS()
 	frame_inputs.emplace(0, std::unordered_set<int>());
 	frame_actions.clear();
 
-	std::regex re_atframe("@([0-9]*)"), re_addframes("\\+([0-9]*)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
+	std::regex re_atframe("@([0-9]+)"), re_addframes("\\+([0-9]+)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
 		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("save=([0-9]+)"), re_rng("rng=([0-9]+)(-([0-9]+))?");
 	try {
 		while (!f.eof())
@@ -345,9 +345,7 @@ void TAS::IncFrame()
 			running = resetting = true;
 		}
 		k_ff = ff; k_run = run; k_reload = reload; k_reset = reset;
-		if (GetKeyState(VK_F4) & 0x8000)
-			running = true; // just for alt-F4
-	} while (!running);
+	} while (!running && *(int*)(memory.base + 0xDB6FD0) != 5);
 
 	frame++;
 	auto iter = frame_actions.find(frame);

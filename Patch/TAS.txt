@@ -16,6 +16,8 @@ File	Virtual
 0d9038	004d9c38	Change call to sleep function pointer to a wrapper
 0d9544	004da144	window_deactivated: noped mov byte_DB9343, 0 (background pausing effect)
 0d9569	004da169	window_deactivated: noped mov byte_6D4707, 0 (background input?)
+0d95cc	004da1cc	Ignore window minimising
+0d961c	004da21c	Don't pause on window losing focus
 0d988e	004da48e	Change call to an early initialisation function to a wrapper
 0fe070	004fec70	black screen transition calculation
 			Made a few changes in here, not very pleased about it though
