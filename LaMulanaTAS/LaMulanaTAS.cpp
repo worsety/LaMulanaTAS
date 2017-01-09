@@ -373,7 +373,10 @@ void TAS::Overlay()
 	(*(void(**) (void))(memory.base + 0x6D8F74))();
 
 	std::wostringstream os;
-	os << "Frame " << std::setw(7) << frame << " RNG " << std::setw(5) << *memory.RNG();
+	float x = *(int*)(memory.base + 0xDB998C) ? (*(float**)(memory.base + 0xDB9988))[0x1E0 / 4] : 0;
+	os << "X:" << std::setw(12) << std::setprecision(8) << std::fixed << x;
+	os << " " << std::setbase(16) << std::setw(8) << *(unsigned*)&x << std::endl;
+	os << "Frame " << std::setbase(10) << std::setw(7) << frame << " RNG " << std::setw(5) << *memory.RNG();
 
 	IDirect3DDevice9 *dev = memory.id3d9dev();
 	IDirect3DSurface9 *surface = NULL;
@@ -403,7 +406,7 @@ void TAS::Overlay()
 	SelectObject(dc, font);
 	SetTextColor(dc, 0xfffff);
 	SetBkMode(dc, TRANSPARENT);
-	if (!DrawText(dc, os.str().data(), -1, &textbox, DT_NOPREFIX | DT_SINGLELINE | DT_LEFT | DT_BOTTOM))
+	if (!DrawText(dc, os.str().data(), -1, &textbox, DT_NOPREFIX | DT_LEFT | DT_BOTTOM))
 		return;
 	surface->ReleaseDC(dc);
 	surface->Release();
