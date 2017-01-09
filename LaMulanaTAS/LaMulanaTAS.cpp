@@ -276,9 +276,7 @@ void TAS::LoadTAS()
 				{
 					frame_actions.emplace(curframe, std::list<std::function<void()>>());
 					int rng = std::stoi(m[1]);
-					int steps = 0;
-					if (m[2].length())
-						steps = std::stoi(m[2]);
+					int steps = m[2].length() ? std::stoi(m[2]) : 0;
 					while (steps > 0)
 						--steps, rng = rng * 109 + 1021 & 0x7fff;
 					while (steps < 0)
