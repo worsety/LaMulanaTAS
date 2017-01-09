@@ -326,16 +326,22 @@ void TAS::IncFrame()
 		if (!k_ff && ff)
 		{
 			running = true;
-			((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-			*(memory.base + 0x6D7BAB) = 0; // force device reset
-			*(int*)(memory.base + 0xdbb4d4) = -15;
+			if (*(int*)(memory.base + 0xdbb4d4) != -15)
+			{
+				((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+				*(memory.base + 0x6D7BAB) = 0; // force device reset
+				*(int*)(memory.base + 0xdbb4d4) = -15;
+			}
 		}
 		if (!k_run && run)
 		{
 			running = true;
-			((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-			*(memory.base + 0x6D7BAB) = 0; // force device reset
-			*(int*)(memory.base + 0xdbb4d4) = 0;
+			if (*(int*)(memory.base + 0xdbb4d4) != 0)
+			{
+				((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+				*(memory.base + 0x6D7BAB) = 0; // force device reset
+				*(int*)(memory.base + 0xdbb4d4) = 0;
+			}
 		}
 		if (!k_reload && reload)
 			LoadTAS();
