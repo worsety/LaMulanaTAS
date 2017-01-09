@@ -340,6 +340,7 @@ void TAS::IncFrame()
 		if (!k_reload && reload)
 			LoadTAS();
 		if (!k_reset && reset) {
+			LoadTAS();
 			*(int*)(memory.base + 0xDB6FD0) = 7;
 			frame = -2;
 			running = resetting = true;
