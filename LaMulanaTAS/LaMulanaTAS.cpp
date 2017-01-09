@@ -182,7 +182,7 @@ void TAS::LoadTAS()
 	frame_actions.clear();
 
 	std::regex re_atframe("@([0-9]+)"), re_addframes("\\+([0-9]+)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
-		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("save=([0-9]+)"), re_rng("rng=([0-9]+)([+-][0-9]+)?");
+		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("save=([0-9]+)"), re_rng("rng(=([0-9]+))?([+-][0-9]+)?");
 	try {
 		while (!f.eof())
 		{
@@ -275,13 +275,22 @@ void TAS::LoadTAS()
 				if (std::regex_match(token, m, re_rng))
 				{
 					frame_actions.emplace(curframe, std::list<std::function<void()>>());
-					int rng = std::stoi(m[1]);
-					int steps = m[2].length() ? std::stoi(m[2]) : 0;
-					while (steps > 0)
-						--steps, rng = rng * 109 + 1021 & 0x7fff;
-					while (steps < 0)
-						++steps, rng = (rng + 31747) * 2405 & 0x7fff;
-					frame_actions.find(curframe)->second.push_back([this, rng]() { *memory.RNG() = rng; });
+					int seed = m[1].length() ? std::stoi(m[2]) : -1;
+					int stepcount = m[3].length() ? std::stoi(m[3]) : 0;
+					frame_actions.find(curframe)->second.push_back([this, seed, stepcount]() {
+						int rng = seed >= 0 ? seed : *memory.RNG(), steps = stepcount;
+						for (; steps > 0; --steps)
+							rng = rng * 109 + 1021 & 0x7fff;
+						for (; steps < 0; ++steps)
+							rng = (rng + 31747) * 2405 & 0x7fff;
+						*memory.RNG() = rng;
+					});
+					continue;
+				}
+				if ("pause" == token)
+				{
+					frame_actions.emplace(curframe, std::list<std::function<void()>>());
+					frame_actions.find(curframe)->second.push_back([this]() { running = false; });
 					continue;
 				}
 				reason << "Unrecognised expression '" << token << "' on line " << linenum;
