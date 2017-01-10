@@ -357,6 +357,7 @@ void TAS::IncFrame()
 		if (!k_reset && reset) {
 			LoadTAS();
 			*(int*)(memory.base + 0xDB6FD0) = 7;
+			*(memory.base + 0x6D4B6F) = 0; // reset quick save
 			frame = -2;
 			running = resetting = true;
 		}

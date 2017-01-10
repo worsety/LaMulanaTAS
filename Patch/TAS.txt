@@ -24,6 +24,9 @@ File	Virtual
 			Basically it was checking if 500ms of real time have passed, but I changed it to the most typical frame count (29?)
 2abecb	006acacb	TAS init wrapper
 2abf49	006acb49	sleep wrapper
+2bf7b8	006c07b8	save dir => tsav (saving and load)
+2bf7fc	006c07fc	time attack record dir => tasrec
+2bf920	006c0920	save dir => tsav (scanning)
 2ce142	006cf142	Strings for loading the DLL functions
 340bb0			Additions to relocation table
 N/A	00dbb4c0	LaMulanaTas.dll handle
