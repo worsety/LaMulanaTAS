@@ -358,6 +358,7 @@ void TAS::IncFrame()
 			LoadTAS();
 			*(int*)(memory.base + 0xDB6FD0) = 7;
 			*(memory.base + 0x6D4B6F) = 0; // reset quick save
+			((void(*)())(memory.base + 0x4179B0))(); // clear playing sounds?
 			frame = -2;
 			running = resetting = true;
 		}
