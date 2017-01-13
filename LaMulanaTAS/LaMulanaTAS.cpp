@@ -181,8 +181,11 @@ void TAS::LoadTAS()
 	frame_inputs.emplace(0, std::unordered_set<int>());
 	frame_actions.clear();
 
+	std::map<std::string, int> marks;
+
 	std::regex re_atframe("@([0-9]+)"), re_addframes("\\+([0-9]+)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
-		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("save=([0-9]+)"), re_rng("rng(=([0-9]+))?([+-][0-9]+)?");
+		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("save=([0-9]+)"), re_rng("rng(=([0-9]+))?([+-][0-9]+)?"),
+		re_mark("([a-zA-Z0-9]+):"), re_markrel("([a-zA-Z0-9]+):([0-9]+)");
 	try {
 		while (!f.eof())
 		{
@@ -204,6 +207,24 @@ void TAS::LoadTAS()
 				if (std::regex_match(token, m, re_addframes))
 				{
 					curframe += std::stoi(m[1]);
+					continue;
+				}
+				if (std::regex_match(token, m, re_mark))
+				{
+					marks[m[1]] = curframe;
+					continue;
+				}
+				if (std::regex_match(token, m, re_markrel))
+				{
+					try
+					{
+						curframe = marks.at(m[1]) + std::stoi(m[2]);
+					}
+					catch (std::out_of_range&)
+					{
+						reason << "Undefined mark " << m[1] << " on line " << linenum;
+						throw parsing_exception(reason.str());
+					}
 					continue;
 				}
 				if (std::regex_match(token, m, re_inputs))
