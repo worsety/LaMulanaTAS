@@ -111,8 +111,8 @@ public:
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
 	std::map<std::string, int> name2vk;
 
-	bool k_ff, k_step, k_run, k_reset, k_reload;
-	bool running, resetting;
+	bool k_ff, k_step, k_run, k_reset, k_reload, k_overlay;
+	bool running, resetting, show_overlay;
 
 	TAS(char *base);
 	bool KeyPressed(int vk);
@@ -122,7 +122,7 @@ public:
 	void LoadTAS();
 };
 
-TAS::TAS(char *base) : memory(base), frame(-1), running(true)
+TAS::TAS(char *base) : memory(base), frame(-1), running(true), show_overlay(true)
 {
 	name2vk["up"] = VK_UP;
 	name2vk["right"] = VK_RIGHT;
@@ -353,14 +353,17 @@ void TAS::IncFrame()
 		bool run = !!(GetKeyState(VK_OEM_4) & 0x8000);
 		bool reload = !!(GetKeyState('R') & 0x8000);
 		bool reset = !!(GetKeyState('T') & 0x8000);
+		bool overlay = !!(GetKeyState('O') & 0x8000);
+		if (!k_overlay && overlay)
+			show_overlay = !show_overlay;
 		if (!k_ff && ff)
 		{
 			running = true;
-			if (*(int*)(memory.base + 0xdbb4d4) != -15)
+			if (*(int*)(memory.base + 0xdbb4d4) != -16)
 			{
 				((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 				*(memory.base + 0x6D7BAB) = 0; // force device reset
-				*(int*)(memory.base + 0xdbb4d4) = -15;
+				*(int*)(memory.base + 0xdbb4d4) = -16;
 			}
 		}
 		if (!k_run && run)
@@ -382,7 +385,7 @@ void TAS::IncFrame()
 			frame = -2;
 			running = resetting = true;
 		}
-		k_ff = ff; k_run = run; k_reload = reload; k_reset = reset;
+		k_ff = ff; k_run = run; k_reload = reload; k_reset = reset; k_overlay = overlay;
 	} while (!running && *(int*)(memory.base + 0xDB6FD0) != 5);
 
 	frame++;
@@ -390,7 +393,7 @@ void TAS::IncFrame()
 	if (iter != frame_actions.end())
 		for (auto x : iter->second)
 			x();
-	// P toggles 16x
+	// P toggles frame limiter
 
 	if (frame >= 0)
 		resetting = false;
@@ -402,6 +405,7 @@ void TAS::IncFrame()
 void TAS::Overlay()
 {
 	(*(void(**) (void))(memory.base + 0x6D8F74))();
+	if (!show_overlay) return;
 
 	std::wostringstream os;
 	float x = *(int*)(memory.base + 0xDB998C) ? (*(float**)(memory.base + 0xDB9988))[0x1E0 / 4] : 0;
