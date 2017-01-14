@@ -392,7 +392,7 @@ void TAS::IncFrame()
 			x();
 	// P toggles 16x
 
-	if (frame == 0)
+	if (frame >= 0)
 		resetting = false;
 }
 
