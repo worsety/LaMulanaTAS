@@ -82,12 +82,10 @@ public:
 
 	void saveslot(int slot)
 	{
-		void(*lm_saveslot)() = (void(*)())(base + 0x484F00);
-		__asm
-		{
-			mov esi, [slot];
-			call[lm_saveslot]
-		}
+		std::ostringstream s;
+		s << "lm_" << std::setbase(16) << std::setprecision(2) << slot << ".sav";
+		((void(*)())(base + 0x4846F0))();
+		((void(*)(const char *savedata, int size, const char *filename))(base + 0x475670))(*(char**)(base + 0x6D7E48), 16384, s.str().data());
 	}
 
 	void loadslot(int slot)
