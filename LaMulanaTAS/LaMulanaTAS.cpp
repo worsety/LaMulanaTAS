@@ -378,7 +378,18 @@ void TAS::IncFrame()
 			LoadTAS();
 		if (!k_reset && reset) {
 			LoadTAS();
-			((void(*)())(memory.base + 0x4D9FB0))();
+			((void(*)(void))(memory.base + 0x607E90))(); // clear object processing lists
+			// zero objects, the game's very bad at actually resetting things, which is related to some of its bugs
+			char *objptr = *(char**)(memory.base + 0xDB95D8);
+			for (int i = 0; i < 0x600; i++, objptr += 820)
+			{
+				// see initialisation function at 0x607C90
+				memset(objptr, 0, 0x280);
+				memset(objptr + 0x288, 0, 0x2d8 - 0x288);
+				*(int*)(objptr + 0x2e4) = 0;
+				memset(objptr + 0x2e8, 0, 820 - 0x2e8);
+			}
+			((void(*)())(memory.base + 0x4D9FB0))(); // perform a normal reset
 			*(memory.base + 0x6D4B6F) = 0; // reset quick save
 			frame = -2;
 			running = resetting = true;
