@@ -143,8 +143,28 @@ public:
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
 	std::map<std::string, int> name2vk;
 
-	bool k_ff, k_step, k_run, k_reset, k_reload, k_overlay;
-	bool running, resetting, show_overlay;
+	struct keystate {
+		unsigned char held : 1;
+		unsigned char pressed : 1;
+		unsigned char released : 1;
+	} keys[256];
+
+	void UpdateKeys()
+	{
+		BYTE keystate[256];
+		GetKeyboardState(keystate);
+		// there's a very efficient way to do this with an xor but whatever, legibility
+		for (int vk = 0; vk < 256; vk++)
+		{
+			bool held = !!(keystate[vk] & 0x80);
+			keys[vk].pressed = held && !keys[vk].held;
+			keys[vk].released = !held && keys[vk].held;
+			keys[vk].held = held;
+		}
+	}
+
+	bool running, resetting, show_overlay, hide_game;
+	unsigned show_hitboxes;
 
 	TAS(char *base);
 	bool KeyPressed(int vk);
@@ -154,7 +174,7 @@ public:
 	void LoadTAS();
 };
 
-TAS::TAS(char *base) : memory(base), frame(-1), running(true), show_overlay(true)
+TAS::TAS(char *base) : memory(base), frame(-1), running(true), show_overlay(true), hide_game(false), show_hitboxes(1 << 7 | 1 << 9 | 1 << 11)
 {
 	name2vk["up"] = VK_UP;
 	name2vk["right"] = VK_RIGHT;
@@ -179,6 +199,7 @@ TAS::TAS(char *base) : memory(base), frame(-1), running(true), show_overlay(true
 	name2vk["f7"] = VK_F7;
 	name2vk["f8"] = VK_F8;
 	name2vk["f9"] = VK_F9;
+	memset(keys, 0, sizeof keys);
 
 	LoadTAS();
 }
@@ -373,22 +394,39 @@ void TAS::IncFrame()
 	{
 		if (GetForegroundWindow() != *(HWND*)(memory.base + 0xDB6FB8))
 			continue;
-		bool step = !!(GetKeyState(VK_OEM_6) & 0x8000);
-		if (!k_step && step)
+		UpdateKeys();
+
+		if (keys[VK_OEM_6].pressed)
 		{
 			running = false;
-			k_step = step;
 			break;
 		}
-		k_step = step;
-		bool ff = !!(GetKeyState('P') & 0x8000);
-		bool run = !!(GetKeyState(VK_OEM_4) & 0x8000);
-		bool reload = !!(GetKeyState('R') & 0x8000);
-		bool reset = !!(GetKeyState('T') & 0x8000);
-		bool overlay = !!(GetKeyState('O') & 0x8000);
-		if (!k_overlay && overlay)
+		if (keys['O'].pressed)
 			show_overlay = !show_overlay;
-		if (!k_ff && ff)
+		static const struct {
+			int vk, type;
+		} hitboxkeys[] =
+		{
+			{'1', 0},
+			{'2', 1},
+			{'3', 2},
+			{'4', 3},
+			{'5', 4},
+			{'6', 5},
+			{'7', 6},
+			{'8', 8},
+			{'9', 10},
+			{'0', 12},
+		};
+		for (auto k : hitboxkeys)
+			show_hitboxes ^= keys[k.vk].pressed << k.type;
+		if (keys[VK_OEM_MINUS].pressed)
+			show_hitboxes = 1 << 7 | 1 << 9 | 1 << 11;
+		if (keys[VK_OEM_PLUS].pressed)
+			show_hitboxes = -1;
+		if (keys[VK_BACK].pressed)
+			hide_game = !hide_game;
+		if (keys['P'].pressed)
 		{
 			running = true;
 			if (*(int*)(memory.base + 0xdbb4d4) != -16)
@@ -398,7 +436,7 @@ void TAS::IncFrame()
 				*(int*)(memory.base + 0xdbb4d4) = -16;
 			}
 		}
-		if (!k_run && run)
+		if (keys[VK_OEM_4].pressed)
 		{
 			running = true;
 			if (*(int*)(memory.base + 0xdbb4d4) != 0)
@@ -408,9 +446,9 @@ void TAS::IncFrame()
 				*(int*)(memory.base + 0xdbb4d4) = 0;
 			}
 		}
-		if (!k_reload && reload)
+		if (keys['R'].pressed)
 			LoadTAS();
-		if (!k_reset && reset) {
+		if (keys['T'].pressed) {
 			LoadTAS();
 			((void(*)(void))(memory.base + 0x607E90))(); // clear object processing lists
 			// zero objects, the game's very bad at actually resetting things, which is related to some of its bugs
@@ -429,7 +467,6 @@ void TAS::IncFrame()
 			frame = -2;
 			running = resetting = true;
 		}
-		k_ff = ff; k_run = run; k_reload = reload; k_reset = reset; k_overlay = overlay;
 	} while (!running && *(int*)(memory.base + 0xDB6FD0) != 5);
 
 	frame++;
@@ -450,7 +487,8 @@ void TAS::Overlay()
 {
 	IDirect3DDevice9 *dev = memory.id3d9dev();
 
-	//dev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 0.f, 0);
+	if (hide_game)
+		dev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 0.f, 0);
 	struct hitboxvec
 	{
 		float x, y, z, w;
@@ -459,6 +497,8 @@ void TAS::Overlay()
 	std::vector<hitboxvec> hv;
 	for (int type = 0; type <= 12; type++)
 	{
+		if (!(show_hitboxes & 1 << type))
+			continue;
 		LaMulanaMemory::hitbox *hitbox = memory.gethitboxes(type);
 		int count = memory.gethitboxcount(type);
 		int i = hv.size();
@@ -477,24 +517,26 @@ void TAS::Overlay()
 				{
 				case 0: // lemeza
 				case 3: // enemy hitbox
-					hv[i].color = D3DCOLOR_ARGB(64, 0, 255, 0);
+					hv[i].color = D3DCOLOR_ARGB(128, 0, 255, 0);
 					break;
 				case 1: // lemeza's weapons
 				case 4: // enemy hurtbox
-				case 5: // a different kind of enemy hurtbox??
 				case 8: // divine retribution
 				case 10: // spikes
-					hv[i].color = D3DCOLOR_ARGB(64, 255, 0, 0);
+					hv[i].color = D3DCOLOR_ARGB(128, 255, 0, 0);
 					break;
 				case 2: // lemeza's shield
 				case 6: // enemy shields
-					hv[i].color = D3DCOLOR_ARGB(64, 0, 255, 255);
+					hv[i].color = D3DCOLOR_ARGB(128, 0, 255, 255);
+					break;
+				case 5: // shieldable attack
+					hv[i].color = D3DCOLOR_ARGB(128, 255, 0, 255);
 					break;
 				case 12: // drops
-					hv[i].color = D3DCOLOR_ARGB(64, 0, 128, 255);
+					hv[i].color = D3DCOLOR_ARGB(128, 0, 128, 255);
 					break;
 				default: // unknown: 7, 9.  11 is unused
-					hv[i].color = D3DCOLOR_ARGB(64, 0, 0, 255);
+					hv[i].color = D3DCOLOR_ARGB(192, 255, 105, 180);
 				}
 			}
 		}
