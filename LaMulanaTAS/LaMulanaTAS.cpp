@@ -151,12 +151,10 @@ public:
 
 	void UpdateKeys()
 	{
-		BYTE keystate[256];
-		GetKeyboardState(keystate);
 		// there's a very efficient way to do this with an xor but whatever, legibility
 		for (int vk = 0; vk < 256; vk++)
 		{
-			bool held = !!(keystate[vk] & 0x80);
+			bool held = GetAsyncKeyState(vk) < 0;
 			keys[vk].pressed = held && !keys[vk].held;
 			keys[vk].released = !held && keys[vk].held;
 			keys[vk].held = held;
