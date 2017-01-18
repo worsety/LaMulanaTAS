@@ -520,20 +520,24 @@ void TAS::Overlay()
 					hv[i].color = D3DCOLOR_ARGB(128, 0, 255, 0);
 					break;
 				case 1: // lemeza's weapons
-				case 4: // enemy hurtbox
 				case 8: // divine retribution
 				case 10: // spikes
 					hv[i].color = D3DCOLOR_ARGB(128, 255, 0, 0);
 					break;
+				case 4: // enemy hurtbox
+					hv[i].color = D3DCOLOR_ARGB(64, 255, 0, 0);
+					break;
 				case 2: // lemeza's shield
+					hv[i].color = D3DCOLOR_ARGB(128, 0, 0, 255);
+					break;
 				case 6: // enemy shields
-					hv[i].color = D3DCOLOR_ARGB(128, 0, 255, 255);
+					hv[i].color = D3DCOLOR_ARGB(64, 0, 0, 255);
 					break;
 				case 5: // shieldable attack
 					hv[i].color = D3DCOLOR_ARGB(128, 255, 0, 255);
 					break;
 				case 12: // drops
-					hv[i].color = D3DCOLOR_ARGB(128, 0, 128, 255);
+					hv[i].color = D3DCOLOR_ARGB(128, 0, 255, 0);
 					break;
 				default: // unknown: 7, 9.  11 is unused
 					hv[i].color = D3DCOLOR_ARGB(192, 255, 105, 180);
@@ -543,12 +547,15 @@ void TAS::Overlay()
 	}
 	if (hv.size())
 	{
-		DWORD oldfvf;
+		DWORD oldfvf, olddestblend;
 		dev->SetTexture(0, 0);
+		dev->GetRenderState(D3DRS_DESTBLEND, &olddestblend);
 		dev->GetFVF(&oldfvf);
 		dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
+		dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
 		dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data());
 		dev->SetFVF(oldfvf);
+		dev->SetRenderState(D3DRS_DESTBLEND, olddestblend);
 	}
 
 	(*(void(**) (void))(memory.base + 0x6D8F74))();
