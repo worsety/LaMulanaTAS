@@ -516,8 +516,10 @@ void TAS::Overlay()
 				switch (type)
 				{
 				case 0: // lemeza
-				case 3: // enemy hitbox
 					hv[i].color = D3DCOLOR_ARGB(128, 0, 255, 0);
+					break;
+				case 3: // enemy hitbox
+					hv[i].color = D3DCOLOR_ARGB(64, 0, 255, 0);
 					break;
 				case 1: // lemeza's weapons
 				case 8: // divine retribution
