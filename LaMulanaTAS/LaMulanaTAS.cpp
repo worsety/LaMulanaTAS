@@ -39,9 +39,33 @@ ok,cancel
 esc,f1-f9
 */
 
+static const struct { off_t ptr_offset, count_offset; } hitbox_ptrs[] =
+{
+	{ 0x6D785C, 0x6D7168 },
+	{ 0x6D7248, 0x6D718C },
+	{ 0x6D78E8, 0x6D7348 },
+	{ 0x6D7E70, 0x6D6F70 },
+	{ 0x6D78F8, 0x6D6FC4 },
+	{ 0x6D7164, 0x6D739C },
+	{ 0x6D7894, 0x6D73A0 },
+	{ 0x6D7E78, 0x6D726C },
+	{ 0x6D72E4, 0x6D7C08 },
+	{ 0x6D7398, 0x6D7270 },
+	{ 0x6D7A1C, 0x6D7E74 },
+	{ 0x6D734C, 0x6D78EC }, // this one's definitely always empty but including it in the list anyway for now
+	{ 0x6D7188, 0x6D7A0C },
+};
+
 class LaMulanaMemory
 {
 public:
+	struct hitbox
+	{
+		float x, y, w, h;
+		int unk1, type;
+		void *object;
+		int unk2, unk3, unk4;
+	};
 	char *base;
 	LaMulanaMemory(char *base_) : base(base_) {}
 
@@ -96,6 +120,16 @@ public:
 		*(short*)(fakeloadmenu + 0xe0) = slot % 5;
 		((void(*)(void))(base + 0x607E90))(); // clears objects
 		((void(*)(void*))(base + 0x44A960))(fakeloadmenu); // loads save, intended to be called from menu code but it only references these three fields
+	}
+
+	int gethitboxcount(int type)
+	{
+		return *(int*)(base + hitbox_ptrs[type].count_offset);
+	}
+
+	hitbox * gethitboxes(int type)
+	{
+		return *(hitbox**)(base + hitbox_ptrs[type].ptr_offset);
 	}
 };
 
@@ -414,7 +448,69 @@ void TAS::IncFrame()
 // Only works if filtering is off
 void TAS::Overlay()
 {
+	IDirect3DDevice9 *dev = memory.id3d9dev();
+
+	//dev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 0.f, 0);
+	struct hitboxvec
+	{
+		float x, y, z, w;
+		D3DCOLOR color;
+	};
+	std::vector<hitboxvec> hv;
+	for (int type = 0; type <= 12; type++)
+	{
+		LaMulanaMemory::hitbox *hitbox = memory.gethitboxes(type);
+		int count = memory.gethitboxcount(type);
+		int i = hv.size();
+		hv.resize(i + count * 6);
+		for (; count > 0; count--, hitbox++)
+		{
+			for (int vert = 0; vert < 6; vert++, i++)
+			{
+				int right = vert >= 1 && vert <= 3;
+				int down = vert >= 2 && vert <= 4;
+				hv[i].x = hitbox->x + right * hitbox->w - 0.5f;
+				hv[i].y = hitbox->y + down * hitbox->h - 0.5f;
+				hv[i].z = 0;
+				hv[i].w = 1;
+				switch (type)
+				{
+				case 0: // lemeza
+				case 3: // enemy hitbox
+					hv[i].color = D3DCOLOR_ARGB(64, 0, 255, 0);
+					break;
+				case 1: // lemeza's weapons
+				case 4: // enemy hurtbox
+				case 5: // a different kind of enemy hurtbox??
+				case 8: // divine retribution
+				case 10: // spikes
+					hv[i].color = D3DCOLOR_ARGB(64, 255, 0, 0);
+					break;
+				case 2: // lemeza's shield
+				case 6: // enemy shields
+					hv[i].color = D3DCOLOR_ARGB(64, 0, 255, 255);
+					break;
+				case 12: // drops
+					hv[i].color = D3DCOLOR_ARGB(64, 0, 128, 255);
+					break;
+				default: // unknown: 7, 9.  11 is unused
+					hv[i].color = D3DCOLOR_ARGB(64, 0, 0, 255);
+				}
+			}
+		}
+	}
+	if (hv.size())
+	{
+		DWORD oldfvf;
+		dev->SetTexture(0, 0);
+		dev->GetFVF(&oldfvf);
+		dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
+		dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data());
+		dev->SetFVF(oldfvf);
+	}
+
 	(*(void(**) (void))(memory.base + 0x6D8F74))();
+
 	if (!show_overlay) return;
 
 	std::wostringstream os;
@@ -423,7 +519,6 @@ void TAS::Overlay()
 	os << " " << std::setbase(16) << std::setw(8) << *(unsigned*)&x << std::endl;
 	os << "Frame " << std::setbase(10) << std::setw(7) << frame << " RNG " << std::setw(5) << *memory.RNG();
 
-	IDirect3DDevice9 *dev = memory.id3d9dev();
 	IDirect3DSurface9 *surface = NULL;
 	IDirect3DVertexBuffer9 *vbuf = NULL;
 	IDirect3DTexture9 *text_tex = NULL;
@@ -434,7 +529,7 @@ void TAS::Overlay()
 		float x, y, z, w;
 		D3DCOLOR color;
 		float u, v;
-	} *v;
+	} v[4];
 
 	RECT textbox{ 0, 0, 400, 40 };
 
@@ -466,9 +561,6 @@ void TAS::Overlay()
 	text_tex->UnlockRect(0);
 	text_tex->Release();
 
-	dev->CreateVertexBuffer(sizeof(vertex) * 4, 0, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1, D3DPOOL_MANAGED, &vbuf, NULL);
-	dev->SetStreamSource(0, vbuf, 0, sizeof *v);
-	vbuf->Lock(0, 0, (void**)&v, 0);
 	memset(v, 0, sizeof(vertex) * 4);
 	D3DVIEWPORT9 viewport;
 	dev->GetViewport(&viewport);
@@ -483,9 +575,7 @@ void TAS::Overlay()
 		v[i].w = 1;
 		v[i].color = D3DCOLOR_ARGB(224, 255, 255, 255);
 	}
-	vbuf->Unlock();
-	vbuf->Release();
-	dev->DrawPrimitive(D3DPT_TRIANGLEFAN, 0, 2);
+	dev->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof *v);
 }
 
 TAS *tas = NULL;
