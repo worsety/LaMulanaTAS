@@ -391,6 +391,7 @@ void TAS::IncFrame()
 			}
 			((void(*)())(memory.base + 0x4D9FB0))(); // perform a normal reset
 			*(memory.base + 0x6D4B6F) = 0; // reset quick save
+			*(short*)(memory.base + 0x6D2218) = -1; // reset time attack cursor
 			frame = -2;
 			running = resetting = true;
 		}
