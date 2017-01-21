@@ -2,6 +2,7 @@
 //
 
 #include "LaMulanaTAS.h"
+#include "util.h"
 #include <utility>
 #include <queue>
 #include <map>
@@ -106,10 +107,8 @@ public:
 
 	void saveslot(int slot)
 	{
-		std::ostringstream s;
-		s << "lm_" << std::setbase(16) << std::setprecision(2) << slot << ".sav";
 		((void(*)())(base + 0x4846F0))();
-		((void(*)(const char *savedata, int size, const char *filename))(base + 0x475670))(*(char**)(base + 0x6D7E48), 16384, s.str().data());
+		((void(*)(const char *savedata, int size, const char *filename))(base + 0x475670))(*(char**)(base + 0x6D7E48), 16384, strprintf("lm_%.2x.sav", slot).data());
 	}
 
 	void loadslot(int slot)
@@ -227,7 +226,6 @@ void TAS::LoadTAS()
 	size_t p = 0;
 	int linenum = 0;
 	std::string line, token;
-	std::ostringstream reason;
 	frame_inputs.clear();
 	frame_inputs.emplace(0, std::unordered_set<int>());
 	frame_actions.clear();
@@ -273,8 +271,7 @@ void TAS::LoadTAS()
 					}
 					catch (std::out_of_range&)
 					{
-						reason << "Undefined mark " << m[1] << " on line " << linenum;
-						throw parsing_exception(reason.str());
+						throw parsing_exception(strprintf("Undefined mark '%s' on line %d", m[1].str().data(), linenum));
 					}
 					continue;
 				}
@@ -306,8 +303,7 @@ void TAS::LoadTAS()
 						}
 						catch (std::out_of_range&)
 						{
-							reason << "Unknown input \"" << input << "\" on line " << linenum;
-							throw parsing_exception(reason.str());
+							throw parsing_exception(strprintf("Unknown input '%s' on line %d", input.data(), linenum));
 						}
 
 						frame_iter last_frame = frame_inputs.lower_bound(curframe + frames);
@@ -365,8 +361,7 @@ void TAS::LoadTAS()
 					frame_actions.find(curframe)->second.push_back([this]() { running = false; });
 					continue;
 				}
-				reason << "Unrecognised expression '" << token << "' on line " << linenum;
-				throw parsing_exception(reason.str());
+				throw parsing_exception(strprintf("Unrecognised expression '%s' on line %d", token.data(), linenum));
 			}
 		}
 	}
@@ -562,11 +557,12 @@ void TAS::Overlay()
 
 	if (!show_overlay) return;
 
-	std::wostringstream os;
 	float x = *(int*)(memory.base + 0xDB998C) ? (*(float**)(memory.base + 0xDB9988))[0x1E0 / 4] : 0;
-	os << "X:" << std::setw(12) << std::setprecision(8) << std::fixed << x;
-	os << " " << std::setbase(16) << std::setw(8) << *(unsigned*)&x << std::endl;
-	os << "Frame " << std::setbase(10) << std::setw(7) << frame << " RNG " << std::setw(5) << *memory.RNG();
+	std::wstring text = wstrprintf(
+		L"X: %12.8f %.8x\n"
+		L"Frame %7d RNG %5d",
+		x, *(unsigned*)&x,
+		frame, *memory.RNG());
 
 	IDirect3DSurface9 *surface = NULL;
 	IDirect3DVertexBuffer9 *vbuf = NULL;
@@ -595,7 +591,7 @@ void TAS::Overlay()
 	SelectObject(dc, font);
 	SetTextColor(dc, 0xfffff);
 	SetBkMode(dc, TRANSPARENT);
-	if (!DrawText(dc, os.str().data(), -1, &textbox, DT_NOPREFIX | DT_LEFT | DT_BOTTOM))
+	if (!DrawText(dc, text.data(), -1, &textbox, DT_NOPREFIX | DT_LEFT | DT_BOTTOM))
 		return;
 	surface->ReleaseDC(dc);
 	surface->Release();
