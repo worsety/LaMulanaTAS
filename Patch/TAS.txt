@@ -36,6 +36,3 @@ N/A	00dbb4c8	TASGetKeyState
 N/A	00dbb4cc	TasOnFrame
 N/A	00dbb4d0	TASRender
 N/A	00dbb4d4	sleep delta (-16 to not sleep)
-
-TODO:
-Work out why there's some frame variance in field transitions.  Hopefully this is loading frames where input is ineffective (despite being read) even in transition walks and can easily be detected

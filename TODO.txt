@@ -1,0 +1,10 @@
+Future features:
+	Patching tool
+	Collision map visualisation
+	Dynamic platform visualisation
+	HP and damage visualisation on hitboxes and hurtboxes
+Enhancements:
+	Internal bitmap font (required for all new visualisation)
+	Catch D3D errors
+	Display all types of errors in the game window.  Maybe use GDI drawing on the window's DC in IncFrame since that should be between a Present and a Sleep?
+	Add a way to play at normal speed without vsync? The game's frame limiter isn't very good so vsync does need to remain the default and have a hotkey
