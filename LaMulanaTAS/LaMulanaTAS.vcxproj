@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="LaMulanaMemory.h" />
     <ClInclude Include="LaMulanaTAS.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
