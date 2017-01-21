@@ -4,6 +4,7 @@
 
 class LaMulanaMemory
 {
+	char *base;
 public:
 	struct hitbox
 	{
@@ -12,8 +13,21 @@ public:
 		void *object;
 		int unk2, unk3, unk4;
 	};
-	char *base;
+
 	LaMulanaMemory(char *base_) : base(base_) {}
+
+	short &RNG = *(short *)(base + 0x6D6C58);
+	char &has_quicksave = *(base + 0x6D4B6F);
+	char &kb_enabled = *(base + 0x6D5820);
+	HWND &window = *(HWND*)(base + 0xDB6FB8);
+	short &timeattack_cursor = *(short*)(base + 0x6D2218);
+	int &game_state = *(int*)(base + 0xDB6FD0);
+	void(** const post_process)() = (void(**)())(base + 0x6D8F74);
+	int &lemeza_spawned = *(int*)(base + 0xDB998C);
+	char *&lemeza_obj = *(char**)(base + 0xDB9988);
+
+	void(* const kill_objects)() = (void(*)())(base + 0x607E90);
+	void(* const reset_game)() = (void(*)())(base + 0x4D9FB0);
 
 	/*
 	jump, main, sub, item
@@ -35,11 +49,6 @@ public:
 		return settings + 0x5c;
 	}
 
-	short * RNG()
-	{
-		return (short *)(base + 0x6D6C58);
-	}
-
 	IDirect3D9 * id3d9()
 	{
 		return *(IDirect3D9**)(base + 0xDB9998);
@@ -50,9 +59,37 @@ public:
 		return *(IDirect3DDevice9**)(base + 0xDB999C);
 	}
 
+	void scrub_objects()
+	{
+		// the game's very bad at actually resetting things, which is related to some of its bugs
+		char *objptr = *(char**)(base + 0xDB95D8);
+		for (int i = 0; i < 0x600; i++, objptr += 820)
+		{
+			// see initialisation function at 0x607C90
+			memset(objptr, 0, 0x280);
+			memset(objptr + 0x288, 0, 0x2d8 - 0x288);
+			*(int*)(objptr + 0x2e4) = 0;
+			memset(objptr + 0x2e8, 0, 820 - 0x2e8);
+		}
+	}
+
+	int getspeed()
+	{
+		return 16 + *(int*)(base + 0xdbb4d4);
+	}
+
+	void setspeed(int frameinterval, bool vsync)
+	{
+		((D3DPRESENT_PARAMETERS*)(base + 0xDB6D90))->PresentationInterval = vsync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
+		*(base + 0x6D7BAB) = 0; // force device reset
+		*(int*)(base + 0xdbb4d4) = frameinterval - 16;
+	}
+
 	void saveslot(int slot)
 	{
+		// create quick save data
 		((void(*)())(base + 0x4846F0))();
+		// save quick save data
 		((void(*)(const char *savedata, int size, const char *filename))(base + 0x475670))(*(char**)(base + 0x6D7E48), 16384, strprintf("lm_%.2x.sav", slot).data());
 	}
 
@@ -62,7 +99,7 @@ public:
 		*(int*)(fakeloadmenu + 0x108) = 1;
 		*(short*)(fakeloadmenu + 0xf4) = slot / 5;
 		*(short*)(fakeloadmenu + 0xe0) = slot % 5;
-		((void(*)(void))(base + 0x607E90))(); // clears objects
+		kill_objects(); // clears objects
 		((void(*)(void*))(base + 0x44A960))(fakeloadmenu); // loads save, intended to be called from menu code but it only references these three fields
 	}
 

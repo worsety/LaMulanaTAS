@@ -255,12 +255,12 @@ void TAS::LoadTAS()
 					int seed = m[1].length() ? std::stoi(m[2]) : -1;
 					int stepcount = m[3].length() ? std::stoi(m[3]) : 0;
 					frame_actions.find(curframe)->second.push_back([this, seed, stepcount]() {
-						int rng = seed >= 0 ? seed : *memory.RNG(), steps = stepcount;
+						int rng = seed >= 0 ? seed : memory.RNG, steps = stepcount;
 						for (; steps > 0; --steps)
 							rng = rng * 109 + 1021 & 0x7fff;
 						for (; steps < 0; ++steps)
 							rng = (rng + 31747) * 2405 & 0x7fff;
-						*memory.RNG() = rng;
+						memory.RNG = rng;
 					});
 					continue;
 				}
@@ -286,7 +286,7 @@ bool TAS::KeyPressed(int vk)
 		return false;
 	auto iter = --frame_inputs.upper_bound(frame);
 	return frame_inputs.end() != iter && 0 != iter->second.count(vk)
-		|| *(memory.base + 0x6D5820) && !!(GetKeyState(vk) & 0x8000);
+		|| memory.kb_enabled && !!(GetKeyState(vk) & 0x8000);
 }
 
 
@@ -294,7 +294,7 @@ void TAS::IncFrame()
 {
 	do
 	{
-		if (GetForegroundWindow() != *(HWND*)(memory.base + 0xDB6FB8))
+		if (GetForegroundWindow() != memory.window)
 			continue;
 		UpdateKeys();
 
@@ -331,45 +331,28 @@ void TAS::IncFrame()
 		if (keys['P'].pressed)
 		{
 			running = true;
-			if (*(int*)(memory.base + 0xdbb4d4) != -16)
-			{
-				((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-				*(memory.base + 0x6D7BAB) = 0; // force device reset
-				*(int*)(memory.base + 0xdbb4d4) = -16;
-			}
+			if (0 != memory.getspeed())
+				memory.setspeed(0, false);
 		}
 		if (keys[VK_OEM_4].pressed)
 		{
 			running = true;
-			if (*(int*)(memory.base + 0xdbb4d4) != 0)
-			{
-				((D3DPRESENT_PARAMETERS*)(memory.base + 0xDB6D90))->PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-				*(memory.base + 0x6D7BAB) = 0; // force device reset
-				*(int*)(memory.base + 0xdbb4d4) = 0;
-			}
+			if (16 != memory.getspeed())
+				memory.setspeed(16, true);
 		}
 		if (keys['R'].pressed)
 			LoadTAS();
 		if (keys['T'].pressed) {
 			LoadTAS();
-			((void(*)(void))(memory.base + 0x607E90))(); // clear object processing lists
-			// zero objects, the game's very bad at actually resetting things, which is related to some of its bugs
-			char *objptr = *(char**)(memory.base + 0xDB95D8);
-			for (int i = 0; i < 0x600; i++, objptr += 820)
-			{
-				// see initialisation function at 0x607C90
-				memset(objptr, 0, 0x280);
-				memset(objptr + 0x288, 0, 0x2d8 - 0x288);
-				*(int*)(objptr + 0x2e4) = 0;
-				memset(objptr + 0x2e8, 0, 820 - 0x2e8);
-			}
-			((void(*)())(memory.base + 0x4D9FB0))(); // perform a normal reset
-			*(memory.base + 0x6D4B6F) = 0; // reset quick save
-			*(short*)(memory.base + 0x6D2218) = -1; // reset time attack cursor
+			memory.kill_objects();
+			memory.scrub_objects();
+			memory.reset_game();
+			memory.has_quicksave = 0;
+			memory.timeattack_cursor = -1;
 			frame = -2;
 			running = resetting = true;
 		}
-	} while (!running && *(int*)(memory.base + 0xDB6FD0) != 5);
+	} while (!running && memory.game_state != 5);
 
 	frame++;
 	auto iter = frame_actions.find(frame);
@@ -461,16 +444,16 @@ void TAS::Overlay()
 		dev->SetRenderState(D3DRS_DESTBLEND, olddestblend);
 	}
 
-	(*(void(**) (void))(memory.base + 0x6D8F74))();
+	(*memory.post_process)();
 
 	if (!show_overlay) return;
 
-	float x = *(int*)(memory.base + 0xDB998C) ? (*(float**)(memory.base + 0xDB9988))[0x1E0 / 4] : 0;
+	float x = memory.lemeza_spawned ? *(float*)&memory.lemeza_obj[0x1E0] : 0;
 	std::wstring text = wstrprintf(
 		L"X: %12.8f %.8x\n"
 		L"Frame %7d RNG %5d",
 		x, *(unsigned*)&x,
-		frame, *memory.RNG());
+		frame, memory.RNG);
 
 	IDirect3DSurface9 *surface = NULL;
 	IDirect3DVertexBuffer9 *vbuf = NULL;
