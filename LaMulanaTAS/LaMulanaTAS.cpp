@@ -40,23 +40,6 @@ ok,cancel
 esc,f1-f9
 */
 
-static const struct { off_t ptr_offset, count_offset; } hitbox_ptrs[] =
-{
-	{ 0x6D785C, 0x6D7168 },
-	{ 0x6D7248, 0x6D718C },
-	{ 0x6D78E8, 0x6D7348 },
-	{ 0x6D7E70, 0x6D6F70 },
-	{ 0x6D78F8, 0x6D6FC4 },
-	{ 0x6D7164, 0x6D739C },
-	{ 0x6D7894, 0x6D73A0 },
-	{ 0x6D7E78, 0x6D726C },
-	{ 0x6D72E4, 0x6D7C08 },
-	{ 0x6D7398, 0x6D7270 },
-	{ 0x6D7A1C, 0x6D7E74 },
-	{ 0x6D734C, 0x6D78EC }, // this one's definitely always empty but including it in the list anyway for now
-	{ 0x6D7188, 0x6D7A0C },
-};
-
 class LaMulanaMemory
 {
 public:
@@ -123,6 +106,22 @@ public:
 
 	vararray<hitbox> gethitboxes(int type)
 	{
+		static const struct { off_t ptr_offset, count_offset; } hitbox_ptrs[] =
+		{
+			{ 0x6D785C, 0x6D7168 },
+			{ 0x6D7248, 0x6D718C },
+			{ 0x6D78E8, 0x6D7348 },
+			{ 0x6D7E70, 0x6D6F70 },
+			{ 0x6D78F8, 0x6D6FC4 },
+			{ 0x6D7164, 0x6D739C },
+			{ 0x6D7894, 0x6D73A0 },
+			{ 0x6D7E78, 0x6D726C },
+			{ 0x6D72E4, 0x6D7C08 },
+			{ 0x6D7398, 0x6D7270 },
+			{ 0x6D7A1C, 0x6D7E74 },
+			{ 0x6D734C, 0x6D78EC }, // this one's definitely always empty but including it in the list anyway for now
+			{ 0x6D7188, 0x6D7A0C },
+		};
 		return vararray<hitbox>(*(hitbox**)(base + hitbox_ptrs[type].ptr_offset), *(int*)(base + hitbox_ptrs[type].count_offset));
 	}
 };
