@@ -444,7 +444,7 @@ void TAS::Overlay()
 		dev->SetRenderState(D3DRS_DESTBLEND, olddestblend);
 	}
 
-	(*memory.post_process)();
+	memory.post_process();
 
 	if (!show_overlay) return;
 

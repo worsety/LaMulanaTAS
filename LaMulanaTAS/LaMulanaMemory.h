@@ -22,7 +22,7 @@ public:
 	HWND &window = *(HWND*)(base + 0xDB6FB8);
 	short &timeattack_cursor = *(short*)(base + 0x6D2218);
 	int &game_state = *(int*)(base + 0xDB6FD0);
-	void(** const post_process)() = (void(**)())(base + 0x6D8F74);
+	void(*&post_process)() = *(void(**)())(base + 0x6D8F74);
 	int &lemeza_spawned = *(int*)(base + 0xDB998C);
 	char *&lemeza_obj = *(char**)(base + 0xDB9988);
 
