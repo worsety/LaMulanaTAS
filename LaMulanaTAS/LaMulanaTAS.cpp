@@ -121,14 +121,9 @@ public:
 		((void(*)(void*))(base + 0x44A960))(fakeloadmenu); // loads save, intended to be called from menu code but it only references these three fields
 	}
 
-	int gethitboxcount(int type)
+	vararray<hitbox> gethitboxes(int type)
 	{
-		return *(int*)(base + hitbox_ptrs[type].count_offset);
-	}
-
-	hitbox * gethitboxes(int type)
-	{
-		return *(hitbox**)(base + hitbox_ptrs[type].ptr_offset);
+		return vararray<hitbox>(*(hitbox**)(base + hitbox_ptrs[type].ptr_offset), *(int*)(base + hitbox_ptrs[type].count_offset));
 	}
 };
 
@@ -492,18 +487,17 @@ void TAS::Overlay()
 	{
 		if (!(show_hitboxes & 1 << type))
 			continue;
-		LaMulanaMemory::hitbox *hitbox = memory.gethitboxes(type);
-		int count = memory.gethitboxcount(type);
 		int i = hv.size();
-		hv.resize(i + count * 6);
-		for (; count > 0; count--, hitbox++)
+		auto hitboxes = memory.gethitboxes(type);
+		hv.resize(i + hitboxes.count * 6);
+		for (auto &&hitbox : hitboxes)
 		{
 			for (int vert = 0; vert < 6; vert++, i++)
 			{
 				int right = vert >= 1 && vert <= 3;
 				int down = vert >= 2 && vert <= 4;
-				hv[i].x = hitbox->x + right * hitbox->w - 0.5f;
-				hv[i].y = hitbox->y + down * hitbox->h - 0.5f;
+				hv[i].x = hitbox.x + right * hitbox.w - 0.5f;
+				hv[i].y = hitbox.y + down * hitbox.h - 0.5f;
 				hv[i].z = 0;
 				hv[i].w = 1;
 				switch (type)
