@@ -448,11 +448,18 @@ void TAS::Overlay()
 
 	if (!show_overlay) return;
 
-	float x = memory.lemeza_spawned ? memory.lemeza_obj->x : 0;
-	std::wstring text = wstrprintf(
-		L"X: %12.8f %.8x\n"
+	std::wstring text;
+	if (memory.lemeza_spawned)
+	{
+		LaMulanaMemory::object &lemeza = *memory.lemeza_obj;
+		text += wstrprintf(
+			L"X:%12.8f %.8x Y:%12.8f\n",
+			lemeza.x, *(unsigned*)&lemeza.x, lemeza.y);
+	}
+	else
+		text += L'\n';
+	text += wstrprintf(
 		L"Frame %7d RNG %5d",
-		x, *(unsigned*)&x,
 		frame, memory.RNG);
 
 	IDirect3DSurface9 *surface = NULL;
@@ -467,7 +474,7 @@ void TAS::Overlay()
 		float u, v;
 	} v[4];
 
-	RECT textbox{ 0, 0, 400, 40 };
+	RECT textbox{ 0, 0, 600, 40 };
 
 	static HFONT font;
 	if (!font)
