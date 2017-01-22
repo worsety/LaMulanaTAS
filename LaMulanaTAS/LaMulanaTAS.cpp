@@ -448,7 +448,7 @@ void TAS::Overlay()
 
 	if (!show_overlay) return;
 
-	float x = memory.lemeza_spawned ? *(float*)&memory.lemeza_obj[0x1E0] : 0;
+	float x = memory.lemeza_spawned ? memory.lemeza_obj->x : 0;
 	std::wstring text = wstrprintf(
 		L"X: %12.8f %.8x\n"
 		L"Frame %7d RNG %5d",

@@ -14,6 +14,46 @@ public:
 		int unk2, unk3, unk4;
 	};
 
+	union object
+	{
+		char raw[0x334];
+		struct {
+			char pad_list[0x2d8];
+			int nextidx, previdx; // used for object allocation
+			short priority, pad_idx;
+			int idx;
+			char unk_list[8];
+			object *next, *prev; // used for processing order within a priority
+		};
+		struct {
+			bool(*create)(object*);
+			void(*update)(object*);
+			void(*drawlist)(object*);
+			bool(*update_postcoldet)(object*);
+			void(*draw)(object*);
+			void(*destroy)(object*);
+			void(*hitbox)(object*);
+			char pad_locals[4];
+			// although I'm calling them locals, there is other private storage in objects
+			// also arguments passed at construction time go into these three arrays
+			int local_int[32];
+			void *local_ptr[16];
+			char unk_locals[0x80];
+			float local_float[32];
+			float x, y;
+		};
+		struct {
+			char pad_hp[0x204];
+			int hp;
+		};
+		struct {
+			char pad_tex[0x238];
+			IDirect3DTexture9 *texture;
+			char pad_tex2[0x1c];
+			float texel_w, texel_h;
+		};
+	};
+
 	LaMulanaMemory(char *base_) : base(base_) {}
 
 	short &RNG = *(short *)(base + 0x6D6C58);
@@ -24,10 +64,10 @@ public:
 	int &game_state = *(int*)(base + 0xDB6FD0);
 	void(*&post_process)() = *(void(**)())(base + 0x6D8F74);
 	int &lemeza_spawned = *(int*)(base + 0xDB998C);
-	char *&lemeza_obj = *(char**)(base + 0xDB9988);
+	object *&lemeza_obj = *(object**)(base + 0xDB9988);
 
-	void(* const kill_objects)() = (void(*)())(base + 0x607E90);
-	void(* const reset_game)() = (void(*)())(base + 0x4D9FB0);
+	void(*const kill_objects)() = (void(*)())(base + 0x607E90);
+	void(*const reset_game)() = (void(*)())(base + 0x4D9FB0);
 
 	/*
 	jump, main, sub, item
