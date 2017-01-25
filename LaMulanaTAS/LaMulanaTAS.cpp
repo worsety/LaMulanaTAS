@@ -485,7 +485,7 @@ void TAS::Overlay()
 					*texel = D3DCOLOR_ARGB(255, 255, 0, 0);
 				else
 					*texel = D3DCOLOR_ARGB(0, 0, 0, 0);
-				font4x6->Add(x * 10.f - scroll.x + 1.f, y * 10.f - scroll.y + 1.f, BMFALIGN_LEFT, D3DCOLOR_ARGB(64, 255, 255, 255), strprintf("%.2x", tile));
+				font4x6->Add(x * 10.f - scroll.x + 1.f, y * 10.f - scroll.y + 2.f, BMFALIGN_LEFT, D3DCOLOR_ARGB(64, 255, 255, 255), strprintf("%.2x", tile));
 			}
 		D3D9CHECKED(tiletex->UnlockRect(0));
 
