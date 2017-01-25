@@ -114,6 +114,20 @@ public:
 		int unk08[6];
 	};
 
+	struct solid {
+		float x;
+		float y;
+		float w;
+		float h;
+		float unk10;
+		float unk14;
+		float unk18;
+		float unk1c;
+		void *unk20;
+		int unk24;
+		object *obj;
+	};
+
 	char &kb_enabled = *(base + 0x6D5820);
 	HWND &window = *(HWND*)(base + 0xDB6FB8);
 	void(*&post_process)() = *(void(**)())(base + 0x6D8F74);
@@ -140,6 +154,10 @@ public:
 
 	unsigned char &scroll_dbidx = *(unsigned char*)(base + 0xDB70CB);
 	scrolling(&scroll_db)[2] = *(scrolling(*)[2])(base + 0xDB7E00);
+
+	unsigned char &solids_dbidx = *(unsigned char*)(base + 0xDB70B2);
+	solid*(&solids_db)[2] = *(solid*(*)[2])(base + 0xDB70F4);
+	int(&solids_count)[2] = *(int(*)[2])(base + 0xDB70CC);
 
 	void(*const kill_objects)() = (void(*)())(base + 0x607E90);
 	void(*const reset_game)() = (void(*)())(base + 0x4D9FB0);
@@ -268,5 +286,10 @@ public:
 		if (flags1[2] & 0x4000 || overlay & 0x80)
 			return overlay;
 		return gettile_map(x, y);
+	}
+
+	vararray<solid> getsolids()
+	{
+		return vararray<solid>(solids_db[solids_dbidx^1], solids_count[solids_dbidx^1]);
 	}
 };

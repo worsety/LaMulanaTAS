@@ -73,7 +73,7 @@ public:
 	}
 
 	bool running, resetting, show_overlay, hide_game;
-	unsigned show_hitboxes;
+	unsigned show_hitboxes, show_solids;
 	bool show_tiles;
 
 	TAS(char *base);
@@ -328,7 +328,7 @@ void TAS::IncFrame()
 		for (auto &&k : hitboxkeys)
 			show_hitboxes ^= keys[k.vk].pressed << k.type;
 		if (keys[VK_OEM_MINUS].pressed)
-			(void)0; // dynamic collision?
+			show_solids = !show_solids;
 		if (keys[VK_OEM_PLUS].pressed)
 			show_tiles = !show_tiles;
 		if (keys[VK_BACK].pressed)
@@ -515,12 +515,40 @@ void TAS::Overlay()
 		D3D9CHECKED(oldstate->Apply());
 	}
 
+	if (show_solids)
+	{
+		int i = 0;
+		auto &solids = memory.getsolids();
+		std::vector<xyzrhwdiff> vert(solids.count * 4);
+		std::vector<int> idx;
+		idx.reserve(solids.count * 6);
+		for (auto &&solid : solids)
+		{
+			font4x6->Add(solid.x, solid.y, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 255, 255),
+				strprintf("%5.1f %5.1f %5.1f\n%8.4f %8.4f\n%p %.8x",
+					solid.unk10, solid.unk14, solid.unk18, solid.unk1c, solid.unk20, solid.unk24));
+			for (int j = 0; j < 4; j++, i)
+			{
+				vert[i + j].x = solid.x + solid.w * !!(j & 1) - 0.5f;
+				vert[i + j].y = solid.y + solid.h * !!(j & 2) - 0.5f;
+				vert[i + j].z = 0; vert[i + j].w = 1; vert[i + j].color = D3DCOLOR_ARGB(128, 160, 160, 192);
+			}
+			idx.insert(idx.end(), { i, i + 1, i + 3, i + 3, i + 2, i });
+			i += 4;
+		}
+		D3D9CHECKED(dev->SetTexture(0, 0));
+		D3D9CHECKED(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE));
+		D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 4 * solids.count, 2 * solids.count, idx.data(), D3DFMT_INDEX32, vert.data(), sizeof vert[0]));
+		font4x6->Draw();
+		D3D9CHECKED(oldstate->Apply());
+	}
+
 	if (show_overlay)
 	{
 		std::string text;
 		for (auto &&k : hitboxkeys)
 			text.push_back(show_hitboxes & 1 << k.type ? k.dispkey : ' ');
-		text.push_back(' ');
+		text.push_back(show_solids ? '-' : ' ');
 		text.push_back(show_tiles ? '=' : ' ');
 		text.push_back('\n');
 		if (memory.lemeza_spawned)
