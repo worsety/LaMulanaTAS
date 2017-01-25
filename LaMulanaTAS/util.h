@@ -32,6 +32,18 @@ HRESULT d3d9check(HRESULT hr, const char *file, int line, const char *code);
 using unique_handle = std::unique_ptr < std::remove_pointer<HANDLE>::type, decltype(&::CloseHandle)>;
 using shared_handle = std::shared_ptr < std::remove_pointer<HANDLE>::type>;
 
+struct xyzrhwdiff
+{
+	float x, y, z, w;
+	D3DCOLOR color;
+};
+struct xyzrhwdiffuv
+{
+	float x, y, z, w;
+	D3DCOLOR color;
+	float u, v;
+};
+
 #define BMFALIGN_LEFT	0
 #define BMFALIGN_TOP	0
 #define BMFALIGN_RIGHT	1
@@ -48,12 +60,7 @@ private:
 	BitmapFont(IDirect3DDevice9* dev, int w, int h);
 
 	static const DWORD fvf = D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1;
-	struct vertex
-	{
-		float x, y, z, w;
-		D3DCOLOR color;
-		float u, v;
-	};
+	using vertex = xyzrhwdiffuv;
 	CComPtr<IDirect3DTexture9> tex;
 	IDirect3DDevice9 *dev;
 	int char_w, char_h;

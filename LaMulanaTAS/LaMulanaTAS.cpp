@@ -292,6 +292,21 @@ bool TAS::KeyPressed(int vk)
 		|| memory.kb_enabled && !!(GetKeyState(vk) & 0x8000);
 }
 
+static const struct {
+	int vk, dispkey, type;
+} hitboxkeys[] =
+{
+	{ '1', '1', 0 },
+	{ '2', '2', 1 },
+	{ '3', '3', 2 },
+	{ '4', '4', 3 },
+	{ '5', '5', 4 },
+	{ '6', '6', 5 },
+	{ '7', '7', 6 },
+	{ '8', '8', 8 },
+	{ '9', '9', 10 },
+	{ '0', '0', 12 },
+};
 
 void TAS::IncFrame()
 {
@@ -308,27 +323,13 @@ void TAS::IncFrame()
 		}
 		if (keys['O'].pressed)
 			show_overlay = !show_overlay;
-		static const struct {
-			int vk, type;
-		} hitboxkeys[] =
-		{
-			{'1', 0},
-			{'2', 1},
-			{'3', 2},
-			{'4', 3},
-			{'5', 4},
-			{'6', 5},
-			{'7', 6},
-			{'8', 8},
-			{'9', 10},
-			{'0', 12},
-		};
-		for (auto k : hitboxkeys)
+
+		for (auto &&k : hitboxkeys)
 			show_hitboxes ^= keys[k.vk].pressed << k.type;
 		if (keys[VK_OEM_MINUS].pressed)
-			show_hitboxes = 1 << 7 | 1 << 9 | 1 << 11;
+			(void)0; // dynamic collision?
 		if (keys[VK_OEM_PLUS].pressed)
-			show_hitboxes = -1;
+			(void)0; // tile collision?
 		if (keys[VK_BACK].pressed)
 			hide_game = !hide_game;
 		if (keys['P'].pressed)
@@ -386,12 +387,7 @@ void TAS::Overlay()
 	CComPtr<IDirect3DStateBlock9> oldstate;
 	D3D9CHECKED(dev->CreateStateBlock(D3DSBT_ALL, &oldstate));
 
-	struct diffvec
-	{
-		float x, y, z, w;
-		D3DCOLOR color;
-	};
-	std::vector<diffvec> hv;
+	std::vector<xyzrhwdiff> hv;
 	for (int type = 0; type <= 12; type++)
 	{
 		if (!(show_hitboxes & 1 << type))
@@ -469,12 +465,15 @@ void TAS::Overlay()
 	if (show_overlay)
 	{
 		std::string text;
+		for (auto &&k : hitboxkeys)
+			text.push_back(show_hitboxes & 1 << k.type ? k.dispkey : ' ');
+		text.push_back('\n');
 		if (memory.lemeza_spawned)
 		{
 			LaMulanaMemory::object &lemeza = *memory.lemeza_obj;
 			text += strprintf(
-				"X:%12.8f %.8x Y:%12.8f\n",
-				lemeza.x, *(unsigned*)&lemeza.x, lemeza.y);
+				"X:%12.8f %.8x Y:%12.8f %.8x\n",
+				lemeza.x, *(unsigned*)&lemeza.x, lemeza.y, *(unsigned*)&lemeza.y);
 		}
 		else
 			text += '\n';
