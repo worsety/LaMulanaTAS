@@ -401,6 +401,19 @@ void TAS::Overlay()
 		hv.resize(i + hitboxes.count * 6);
 		for (auto &&hitbox : hitboxes)
 		{
+			switch (type)
+			{
+			case 0:
+			case 3:
+				font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_LEFT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 0), strprintf("%d", hitbox.object->hp));
+				break;
+			case 1:
+			case 4:
+			case 8:
+			case 10:
+				font4x6->Add(hitbox.x + hitbox.w, hitbox.y, BMFALIGN_RIGHT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 0, 0), strprintf("%d", hitbox.damage));
+				break;
+			}
 			for (int vert = 0; vert < 6; vert++, i++)
 			{
 				int right = vert >= 1 && vert <= 3;
@@ -450,7 +463,6 @@ void TAS::Overlay()
 		D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
 		D3D9CHECKED(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE));
 		D3D9CHECKED(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data()));
-		D3D9CHECKED(oldstate->Apply());
 	}
 
 	if (show_overlay)
@@ -470,10 +482,10 @@ void TAS::Overlay()
 			frame, memory.RNG);
 
 		font8x12->Add(10, 470, BMFALIGN_BOTTOM | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
-		font8x12->Draw();
 	}
 
-
+	font4x6->Draw();
+	font8x12->Draw();
 	D3D9CHECKED(oldstate->Apply());
 
 	memory.post_process();

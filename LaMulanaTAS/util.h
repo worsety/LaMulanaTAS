@@ -41,7 +41,7 @@ class BitmapFont
 {
 public:
 	BitmapFont(IDirect3DDevice9* dev, int w, int h, HMODULE mod, int res);
-	void Add(int x, int y, int align, D3DCOLOR color, const std::string &text);
+	void Add(float x, float y, int align, D3DCOLOR color, const std::string &text);
 	void Draw(D3DCOLOR backcolor = D3DCOLOR_ARGB(0,0,0,0));
 
 private:

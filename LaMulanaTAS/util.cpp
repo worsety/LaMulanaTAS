@@ -130,7 +130,7 @@ std::vector<std::string> split(const std::string &text, char delim) {
 	return tokens;
 }
 
-void BitmapFont::Add(int x, int y, int align, D3DCOLOR color, const std::string &text)
+void BitmapFont::Add(float x, float y, int align, D3DCOLOR color, const std::string &text)
 {
 	std::vector<std::string> lines = split(text, '\n');
 	if (align & BMFALIGN_RIGHT)
@@ -143,7 +143,7 @@ void BitmapFont::Add(int x, int y, int align, D3DCOLOR color, const std::string 
 	}
 
 	vert.reserve((chars + text.size()) * 4);
-	int draw_x = x, draw_y = y;
+	float draw_x = x, draw_y = y;
 	for (int c : text)
 	{
 		if (c == '\n')
@@ -172,6 +172,8 @@ void BitmapFont::Add(int x, int y, int align, D3DCOLOR color, const std::string 
 
 void BitmapFont::Draw(D3DCOLOR backcolor)
 {
+	if (!chars)
+		return;
 	D3D9CHECKED(dev->SetFVF(fvf));
 	D3D9CHECKED(dev->SetTexture(0, tex));
 	D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));

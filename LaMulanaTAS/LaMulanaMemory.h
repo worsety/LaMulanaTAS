@@ -6,14 +6,6 @@ class LaMulanaMemory
 {
 	char *base;
 public:
-	struct hitbox
-	{
-		float x, y, w, h;
-		int unk1, type;
-		void *object;
-		int unk2, unk3, unk4;
-	};
-
 	union object
 	{
 		char raw[0x334];
@@ -52,6 +44,14 @@ public:
 			char pad_tex2[0x1c];
 			float texel_w, texel_h;
 		};
+	};
+
+	struct hitbox
+	{
+		float x, y, w, h;
+		int damage, type;
+		object *object;
+		int unk2, unk3, unk4;
 	};
 
 	LaMulanaMemory(char *base_) : base(base_) {}
