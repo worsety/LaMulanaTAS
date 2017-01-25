@@ -12,3 +12,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+extern HMODULE tasModule;

@@ -15,11 +15,13 @@
 #include <iomanip>
 #include <regex>
 #include <functional>
+#include "resource.h"
 
 #ifndef _NDEBUG
 #define D3D_DEBUG_INFO
 #endif
 #include "d3d9.h"
+#include "atlbase.h"
 
 /*
 
@@ -127,7 +129,7 @@ void TAS::LoadTAS()
 	}
 	catch (std::exception&)
 	{
-		MessageBox(NULL, L"Couldn't load script.txt", L"TAS error", MB_OK);
+		MessageBox(nullptr, L"Couldn't load script.txt", L"TAS error", MB_OK);
 		return;
 	}
 
@@ -276,7 +278,7 @@ void TAS::LoadTAS()
 	}
 	catch (parsing_exception& ex)
 	{
-		MessageBoxA(NULL, ex.what(), "TAS parsing error", MB_OK);
+		MessageBoxA(nullptr, ex.what(), "TAS parsing error", MB_OK);
 	}
 }
 
@@ -406,8 +408,8 @@ void TAS::Overlay()
 					hv[i].color = D3DCOLOR_ARGB(64, 0, 255, 0);
 					break;
 				case 1: // lemeza's weapons
-				case 8: // divine retribution
-				case 10: // spikes
+				case 8: // scaling damage, omni
+				case 10: // scaling damage, directional
 					hv[i].color = D3DCOLOR_ARGB(128, 255, 0, 0);
 					break;
 				case 4: // enemy hurtbox
@@ -462,10 +464,10 @@ void TAS::Overlay()
 		L"Frame %7d RNG %5d",
 		frame, memory.RNG);
 
-	IDirect3DSurface9 *surface = NULL;
-	IDirect3DVertexBuffer9 *vbuf = NULL;
-	IDirect3DTexture9 *text_tex = NULL;
-	HDC dc = NULL;
+	IDirect3DSurface9 *surface = nullptr;
+	IDirect3DVertexBuffer9 *vbuf = nullptr;
+	IDirect3DTexture9 *text_tex = nullptr;
+	HDC dc = nullptr;
 	D3DLOCKED_RECT locked;
 	struct vertex
 	{
@@ -481,7 +483,7 @@ void TAS::Overlay()
 		font = CreateFont(18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_RASTER_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FIXED_PITCH, TEXT("Lucida Console"));
 
 
-	dev->CreateTexture(textbox.right, textbox.bottom, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &text_tex, NULL);
+	dev->CreateTexture(textbox.right, textbox.bottom, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &text_tex, nullptr);
 	dev->SetTexture(0, text_tex);
 
 	text_tex->GetSurfaceLevel(0, &surface);
@@ -494,7 +496,7 @@ void TAS::Overlay()
 	surface->ReleaseDC(dc);
 	surface->Release();
 
-	text_tex->LockRect(0, &locked, NULL, 0);
+	text_tex->LockRect(0, &locked, nullptr, 0);
 	for (int y = 0; y < textbox.bottom; y++)
 		for (int x = 0; x < textbox.right; x++)
 		{
@@ -521,7 +523,7 @@ void TAS::Overlay()
 	dev->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof *v);
 }
 
-TAS *tas = NULL;
+TAS *tas = nullptr;
 
 void __fastcall TASInit(char *base)
 {
@@ -544,7 +546,10 @@ void TASRender(void)
 	tas->Overlay();
 }
 
+HMODULE tasModule;
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
+	tasModule = hModule;
 	return TRUE;
 }

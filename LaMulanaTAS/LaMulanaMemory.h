@@ -85,7 +85,7 @@ public:
 	{
 		unsigned char *settings = *(unsigned char**)(base + 0xDB6F14);
 		if (!settings)
-			return NULL;
+			return nullptr;
 		return settings + 0x5c;
 	}
 

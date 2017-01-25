@@ -128,6 +128,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LAMULANATAS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
@@ -166,6 +167,7 @@
   <ItemGroup>
     <ClInclude Include="LaMulanaMemory.h" />
     <ClInclude Include="LaMulanaTAS.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -179,6 +181,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="LaMulanaTAS.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="LaMulanaTAS.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="tomthumb.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

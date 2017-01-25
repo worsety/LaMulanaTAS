@@ -1,6 +1,8 @@
 #include "util.h"
 #include <cstdarg>
 #include <cwchar>
+#include <algorithm>
+#include "windows.h"
 
 #if _MSC_VER < 1900
 #error Visual C++ 2015 required for compliant vsnprintf
@@ -12,7 +14,7 @@ std::string strprintf(_In_z_ _Printf_format_string_ const char * const fmt, ...)
 	va_start(v, fmt);
 	int len = std::vsnprintf(&buf[0], buf.size() - 1, fmt, v);
 	va_end(v);
-	if (len + 1 >(int)buf.size())
+	if (len + 1 > (int)buf.size())
 	{
 		buf.resize(len + 1);
 		va_start(v, fmt);
