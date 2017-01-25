@@ -142,7 +142,8 @@ void BitmapFont::Add(float x, float y, int align, D3DCOLOR color, const std::str
 		y -= lines.size() * char_h;
 	}
 
-	vert.reserve((chars + text.size()) * 4);
+	if (vert.size () < (chars + text.size()) * 4)
+		vert.resize((chars + text.size()) * 4);
 	float draw_x = x, draw_y = y;
 	for (int c : text)
 	{
@@ -164,10 +165,14 @@ void BitmapFont::Add(float x, float y, int align, D3DCOLOR color, const std::str
 		draw_x += char_w, chars++;
 	}
 
-	index.reserve(chars * 6);
-	for (int i = index.size() / 6; i < (int)chars; i++)
-		for (int j = 0; j < 6; j++)
-			index[6 * i + j] = 4 * i + (j >= 1 && j <= 3) + 2 * (j >= 2 && j <= 4);
+	if (index.size() < chars * 6)
+	{
+		int oldidx = index.size() / 6;
+		index.resize(chars * 6);
+		for (int i = oldidx; i < (int)chars; i++)
+			for (int j = 0; j < 6; j++)
+				index[6 * i + j] = 4 * i + (j >= 1 && j <= 3) + 2 * (j >= 2 && j <= 4);
+	}
 }
 
 void BitmapFont::Draw(D3DCOLOR backcolor)

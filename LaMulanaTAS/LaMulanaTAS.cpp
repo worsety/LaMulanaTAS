@@ -409,6 +409,7 @@ void TAS::Overlay()
 				break;
 			case 1:
 			case 4:
+			case 5:
 			case 8:
 			case 10:
 				font4x6->Add(hitbox.x + hitbox.w, hitbox.y, BMFALIGN_RIGHT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 0, 0), strprintf("%d", hitbox.damage));
