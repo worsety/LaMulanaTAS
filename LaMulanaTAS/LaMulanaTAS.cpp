@@ -74,6 +74,7 @@ public:
 
 	bool running, resetting, show_overlay, hide_game;
 	unsigned show_hitboxes;
+	bool show_tiles;
 
 	TAS(char *base);
 	bool KeyPressed(int vk);
@@ -329,7 +330,7 @@ void TAS::IncFrame()
 		if (keys[VK_OEM_MINUS].pressed)
 			(void)0; // dynamic collision?
 		if (keys[VK_OEM_PLUS].pressed)
-			(void)0; // tile collision?
+			show_tiles = !show_tiles;
 		if (keys[VK_BACK].pressed)
 			hide_game = !hide_game;
 		if (keys['P'].pressed)
@@ -462,11 +463,61 @@ void TAS::Overlay()
 		D3D9CHECKED(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data()));
 	}
 
+	if (show_tiles)
+	{
+		CComPtr<IDirect3DTexture9> tiletex;
+		const auto room = memory.getroom();
+		const auto &scroll = memory.scroll_db[memory.scroll_dbidx];
+		int w = 64, h = 48;
+		if (room)
+			w = room->w, h = room->h;
+		D3D9CHECKED(dev->CreateTexture(w, h, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &tiletex, nullptr));
+		D3DLOCKED_RECT rect;
+		D3D9CHECKED(tiletex->LockRect(0, &rect, nullptr, D3DLOCK_DISCARD));
+		for (int x = 0; x < w; x++)
+			for (int y = 0; y < h; y++)
+			{
+				unsigned char tile = memory.gettile_effective(x, y);
+				D3DCOLOR* texel = (D3DCOLOR*)((char*)rect.pBits + y * rect.Pitch) + x;
+				if (tile & 0x80)
+					*texel = D3DCOLOR_ARGB(255, 255, 0, 0);
+				else
+					*texel = D3DCOLOR_ARGB(0, 0, 0, 0);
+			}
+		D3D9CHECKED(tiletex->UnlockRect(0));
+
+		USHORT idx[6] = { 0, 1, 3, 3, 2, 0 };
+		xyzrhwdiffuv vert[4];
+		for (int i = 0; i < 4; i++)
+		{
+			vert[i].x = 10 * w * !!(i & 1) - scroll.x - 0.5f;
+			vert[i].y = 10 * h * !!(i & 2) - scroll.y - 0.5f;
+			vert[i].u = 1.f * !!(i & 1);
+			vert[i].v = 1.f * !!(i & 2);
+			vert[i].z = 0; vert[i].w = 1; vert[i].color = D3DCOLOR_ARGB(64, 255, 255, 255);
+		}
+
+		D3D9CHECKED(dev->SetTexture(0, tiletex));
+		D3D9CHECKED(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1));
+		D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
+		D3D9CHECKED(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA));
+		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE));
+		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE));
+		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE));
+		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE));
+		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE));
+		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE));
+		D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 4, 2, idx, D3DFMT_INDEX16, vert, sizeof *vert));
+
+	}
+
 	if (show_overlay)
 	{
 		std::string text;
 		for (auto &&k : hitboxkeys)
 			text.push_back(show_hitboxes & 1 << k.type ? k.dispkey : ' ');
+		text.push_back(' ');
+		text.push_back(show_tiles ? '=' : ' ');
 		text.push_back('\n');
 		if (memory.lemeza_spawned)
 		{

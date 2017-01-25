@@ -6,6 +6,8 @@ class LaMulanaMemory
 {
 	char *base;
 public:
+	LaMulanaMemory(char *base_) : base(base_) {}
+
 	union object
 	{
 		char raw[0x334];
@@ -54,17 +56,90 @@ public:
 		int unk2, unk3, unk4;
 	};
 
-	LaMulanaMemory(char *base_) : base(base_) {}
+	struct mapid
+	{
+		char zone, room, screen;
+	};
 
-	short &RNG = *(short *)(base + 0x6D6C58);
-	char &has_quicksave = *(base + 0x6D4B6F);
+	struct screen
+	{
+		wchar_t *name;
+		unsigned char unk04;
+		union
+		{
+			struct
+			{
+				mapid up, right, down, left;
+			};
+			mapid exits[4]; // up, right, down, left
+		};
+		unsigned char unk11[3];
+		int unk14;
+	};
+
+	struct room
+	{
+		unsigned char unk00[4];
+		unsigned char unk05[3];
+		int unk08[2];
+		screen *screens;
+		short w, h;
+		unsigned char *tiles; // w*h rowwise
+	};
+
+	// not 1:1 with fields
+	struct zone
+	{
+		unsigned char unk00[8];
+		room *rooms;
+		void *unk0c[2];
+		int unk14;
+	};
+
+	struct map
+	{
+		int num_zones;
+		zone *zones;
+	};
+
+	struct bossmap
+	{
+		int unk00[2];
+		room *rooms;
+		int unk0c[3];
+	};
+
+	struct scrolling {
+		float x, y;
+		int unk08[6];
+	};
+
 	char &kb_enabled = *(base + 0x6D5820);
 	HWND &window = *(HWND*)(base + 0xDB6FB8);
-	short &timeattack_cursor = *(short*)(base + 0x6D2218);
-	int &game_state = *(int*)(base + 0xDB6FD0);
 	void(*&post_process)() = *(void(**)())(base + 0x6D8F74);
+
+	short &RNG = *(short *)(base + 0x6D6C58);
+	int &game_state = *(int*)(base + 0xDB6FD0);
+	char &has_quicksave = *(base + 0x6D4B6F);
+	short &timeattack_cursor = *(short*)(base + 0x6D2218);
 	int &lemeza_spawned = *(int*)(base + 0xDB998C);
 	object *&lemeza_obj = *(object**)(base + 0xDB9988);
+	unsigned(&flags1)[5] = *(unsigned(*)[5])(base + 0x6D7BC8);
+	scrolling(&scroll)[2] = *(scrolling(*)[2])(base + 0xDB7E00);
+
+	char &in_timeattack = *(char*)(base + 0x6D6FDB);
+	map &map_main = *(map*)(base + 0xDB70C0);
+	map &map_timeattack = *(map*)(base + 0xDB7DD4);
+	bossmap *&map_boss = *(bossmap**)(base + 0xDB7DE4);
+	short &boss_mapidx = *(short*)(base + 0x6D7BA8);
+	short &boss_room = *(short*)(base + 0x6D6FD8);
+	unsigned char(&tile_overlay)[64][48] = *(unsigned char(*)[64][48])(base + 0xDB71B8); //colwise
+	char &cur_zone = *(char*)(base + 0xDB702E);
+	char &cur_room = *(char*)(base + 0xDB7006);
+	char &cur_screen = *(char*)(base + 0xDB7007);
+
+	unsigned char &scroll_dbidx = *(unsigned char*)(base + 0xDB70CB);
+	scrolling(&scroll_db)[2] = *(scrolling(*)[2])(base + 0xDB7E00);
 
 	void(*const kill_objects)() = (void(*)())(base + 0x607E90);
 	void(*const reset_game)() = (void(*)())(base + 0x4D9FB0);
@@ -162,5 +237,36 @@ public:
 			{ 0x6D7188, 0x6D7A0C },
 		};
 		return vararray<hitbox>(*(hitbox**)(base + hitbox_ptrs[type].ptr_offset), *(int*)(base + hitbox_ptrs[type].count_offset));
+	}
+
+	map & getmap()
+	{
+		return in_timeattack ? map_timeattack : map_main;
+	}
+
+	room *getroom()
+	{
+		if (flags1[1] & 0x400)
+			return &map_boss[boss_mapidx].rooms[boss_room];
+		else if (cur_zone >= 0)
+			return &getmap().zones[cur_zone].rooms[cur_room];
+		return nullptr;
+	}
+
+	unsigned char gettile_map(int x, int y)
+	{
+		room *here = getroom();
+		return here ? here->tiles[y * here->w + x] : 0;
+	}
+
+	unsigned char gettile_effective(int x, int y)
+	{
+		const auto &scroll = scroll_db[scroll_dbidx];
+		int ov_x = x - (int)trunc(scroll.x * 0.1f);
+		int ov_y = y - (int)trunc(scroll.y * 0.1f);
+		unsigned char overlay = (ov_x >= 0 && ov_x < 64 && ov_y >= 0 && ov_y < 48) ? tile_overlay[ov_x][ov_y] :  0;
+		if (flags1[2] & 0x4000 || overlay & 0x80)
+			return overlay;
+		return gettile_map(x, y);
 	}
 };
