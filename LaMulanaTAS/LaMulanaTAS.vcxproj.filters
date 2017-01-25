@@ -50,5 +50,8 @@
     <Image Include="tomthumb.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="smallfont.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

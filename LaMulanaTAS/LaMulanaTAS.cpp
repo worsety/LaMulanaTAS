@@ -52,6 +52,7 @@ public:
 	std::map<int, std::list<std::function<void()>>> frame_actions;
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
 	std::map<std::string, int> name2vk;
+	std::unique_ptr<BitmapFont> font4x6, font8x12;
 
 	struct keystate {
 		unsigned char held : 1;
@@ -374,14 +375,23 @@ void TAS::Overlay()
 {
 	IDirect3DDevice9 *dev = memory.id3d9dev();
 
+	if (!font4x6)
+		font4x6.reset(new BitmapFont(dev, 4, 6, tasModule, IDB_TOMTHUMB));
+	if (!font8x12)
+		font8x12.reset(new BitmapFont(dev, 8, 12, tasModule, IDB_SMALLFONT));
+
 	if (hide_game)
-		dev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 0.f, 0);
-	struct hitboxvec
+		D3D9CHECKED(dev->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 0.f, 0));
+
+	CComPtr<IDirect3DStateBlock9> oldstate;
+	D3D9CHECKED(dev->CreateStateBlock(D3DSBT_ALL, &oldstate));
+
+	struct diffvec
 	{
 		float x, y, z, w;
 		D3DCOLOR color;
 	};
-	std::vector<hitboxvec> hv;
+	std::vector<diffvec> hv;
 	for (int type = 0; type <= 12; type++)
 	{
 		if (!(show_hitboxes & 1 << type))
@@ -435,92 +445,38 @@ void TAS::Overlay()
 	}
 	if (hv.size())
 	{
-		DWORD oldfvf, olddestblend;
-		dev->SetTexture(0, 0);
-		dev->GetRenderState(D3DRS_DESTBLEND, &olddestblend);
-		dev->GetFVF(&oldfvf);
-		dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
-		dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
-		dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data());
-		dev->SetFVF(oldfvf);
-		dev->SetRenderState(D3DRS_DESTBLEND, olddestblend);
+		D3D9CHECKED(dev->SetTexture(0, 0));
+		D3D9CHECKED(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE));
+		D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
+		D3D9CHECKED(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE));
+		D3D9CHECKED(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data()));
+		D3D9CHECKED(oldstate->Apply());
 	}
+
+	if (show_overlay)
+	{
+		std::string text;
+		if (memory.lemeza_spawned)
+		{
+			LaMulanaMemory::object &lemeza = *memory.lemeza_obj;
+			text += strprintf(
+				"X:%12.8f %.8x Y:%12.8f\n",
+				lemeza.x, *(unsigned*)&lemeza.x, lemeza.y);
+		}
+		else
+			text += '\n';
+		text += strprintf(
+			"Frame %7d RNG %5d",
+			frame, memory.RNG);
+
+		font8x12->Add(10, 470, BMFALIGN_BOTTOM | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
+		font8x12->Draw();
+	}
+
+
+	D3D9CHECKED(oldstate->Apply());
 
 	memory.post_process();
-
-	if (!show_overlay) return;
-
-	std::wstring text;
-	if (memory.lemeza_spawned)
-	{
-		LaMulanaMemory::object &lemeza = *memory.lemeza_obj;
-		text += wstrprintf(
-			L"X:%12.8f %.8x Y:%12.8f\n",
-			lemeza.x, *(unsigned*)&lemeza.x, lemeza.y);
-	}
-	else
-		text += L'\n';
-	text += wstrprintf(
-		L"Frame %7d RNG %5d",
-		frame, memory.RNG);
-
-	IDirect3DSurface9 *surface = nullptr;
-	IDirect3DVertexBuffer9 *vbuf = nullptr;
-	IDirect3DTexture9 *text_tex = nullptr;
-	HDC dc = nullptr;
-	D3DLOCKED_RECT locked;
-	struct vertex
-	{
-		float x, y, z, w;
-		D3DCOLOR color;
-		float u, v;
-	} v[4];
-
-	RECT textbox{ 0, 0, 600, 40 };
-
-	static HFONT font;
-	if (!font)
-		font = CreateFont(18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_RASTER_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FIXED_PITCH, TEXT("Lucida Console"));
-
-
-	dev->CreateTexture(textbox.right, textbox.bottom, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &text_tex, nullptr);
-	dev->SetTexture(0, text_tex);
-
-	text_tex->GetSurfaceLevel(0, &surface);
-	surface->GetDC(&dc);
-	SelectObject(dc, font);
-	SetTextColor(dc, 0xfffff);
-	SetBkMode(dc, TRANSPARENT);
-	if (!DrawText(dc, text.data(), -1, &textbox, DT_NOPREFIX | DT_LEFT | DT_BOTTOM))
-		return;
-	surface->ReleaseDC(dc);
-	surface->Release();
-
-	text_tex->LockRect(0, &locked, nullptr, 0);
-	for (int y = 0; y < textbox.bottom; y++)
-		for (int x = 0; x < textbox.right; x++)
-		{
-			DWORD &pixel = *(DWORD*)((char*)locked.pBits + y * locked.Pitch + x * 4);
-			pixel = pixel << 8 | 0xffffff;
-		}
-	text_tex->UnlockRect(0);
-	text_tex->Release();
-
-	memset(v, 0, sizeof(vertex) * 4);
-	D3DVIEWPORT9 viewport;
-	dev->GetViewport(&viewport);
-	for (int i = 0; i < 4; i++)
-	{
-		int right = i & 1 ^ (i >> 1);
-		int down = i >> 1;
-		v[i].x = 10 + right * textbox.right * 2 - 0.5f;
-		v[i].y = viewport.Height - (1 - down) * textbox.bottom * 2 - 10.5f;
-		v[i].u = 1.f * right;
-		v[i].v = 1.f * down;
-		v[i].w = 1;
-		v[i].color = D3DCOLOR_ARGB(224, 255, 255, 255);
-	}
-	dev->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof *v);
 }
 
 TAS *tas = nullptr;
