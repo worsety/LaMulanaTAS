@@ -471,7 +471,7 @@ void TAS::Overlay()
 		int w = 64, h = 48;
 		if (room)
 			w = room->w, h = room->h;
-		D3D9CHECKED(dev->CreateTexture(w, h, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &tiletex, nullptr));
+		D3D9CHECKED(dev->CreateTexture(w, h, 1, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &tiletex, nullptr));
 		D3DLOCKED_RECT rect;
 		D3D9CHECKED(tiletex->LockRect(0, &rect, nullptr, D3DLOCK_DISCARD));
 		for (int x = 0; x < w; x++)
@@ -483,6 +483,7 @@ void TAS::Overlay()
 					*texel = D3DCOLOR_ARGB(255, 255, 0, 0);
 				else
 					*texel = D3DCOLOR_ARGB(0, 0, 0, 0);
+				font4x6->Add(x * 10.f - scroll.x + 1.f, y * 10.f - scroll.y + 1.f, BMFALIGN_LEFT, D3DCOLOR_ARGB(64, 255, 255, 255), strprintf("%.2x", tile));
 			}
 		D3D9CHECKED(tiletex->UnlockRect(0));
 
@@ -508,6 +509,7 @@ void TAS::Overlay()
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE));
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE));
 		D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 4, 2, idx, D3DFMT_INDEX16, vert, sizeof *vert));
+		font4x6->Draw(D3DCOLOR_ARGB(64, 0, 0, 0));
 
 	}
 
