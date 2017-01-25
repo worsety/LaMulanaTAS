@@ -461,6 +461,8 @@ void TAS::Overlay()
 		D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
 		D3D9CHECKED(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE));
 		D3D9CHECKED(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data()));
+		font4x6->Draw();
+		D3D9CHECKED(oldstate->Apply());
 	}
 
 	if (show_tiles)
@@ -510,7 +512,7 @@ void TAS::Overlay()
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE));
 		D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 4, 2, idx, D3DFMT_INDEX16, vert, sizeof *vert));
 		font4x6->Draw(D3DCOLOR_ARGB(64, 0, 0, 0));
-
+		D3D9CHECKED(oldstate->Apply());
 	}
 
 	if (show_overlay)
@@ -535,11 +537,9 @@ void TAS::Overlay()
 			frame, memory.RNG);
 
 		font8x12->Add(10, 470, BMFALIGN_BOTTOM | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
+		font8x12->Draw();
+		D3D9CHECKED(oldstate->Apply());
 	}
-
-	font4x6->Draw();
-	font8x12->Draw();
-	D3D9CHECKED(oldstate->Apply());
 
 	memory.post_process();
 }

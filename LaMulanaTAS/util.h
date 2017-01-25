@@ -66,6 +66,6 @@ private:
 	int char_w, char_h;
 	float char_texw, char_texh;
 	std::vector<vertex> vert;
-	std::vector<USHORT> index;
+	std::vector<UINT> index;
 	size_t chars;
 };

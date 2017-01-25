@@ -169,7 +169,7 @@ void BitmapFont::Add(float x, float y, int align, D3DCOLOR color, const std::str
 	{
 		int oldidx = index.size() / 6;
 		index.resize(chars * 6);
-		for (int i = oldidx; i < (int)chars; i++)
+		for (size_t i = oldidx; i < chars; i++)
 			for (int j = 0; j < 6; j++)
 				index[6 * i + j] = 4 * i + (j >= 1 && j <= 3) + 2 * (j >= 2 && j <= 4);
 	}
@@ -204,6 +204,6 @@ void BitmapFont::Draw(D3DCOLOR backcolor)
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE));
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTOP_SELECTARG1));
 	}
-	D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, chars * 4, chars * 2, index.data(), D3DFMT_INDEX16, vert.data(), sizeof *vert.data()));
+	D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, chars * 4, chars * 2, index.data(), D3DFMT_INDEX32, vert.data(), sizeof *vert.data()));
 	chars = 0;
 }
