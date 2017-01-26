@@ -469,7 +469,7 @@ void TAS::Overlay()
 	{
 		CComPtr<IDirect3DTexture9> tiletex;
 		const auto room = memory.getroom();
-		const auto &scroll = memory.scroll_db[memory.scroll_dbidx];
+		const auto &scroll = memory.flags1[1] & 0x400 ? LaMulanaMemory::scrolling() : memory.scroll_db[memory.scroll_dbidx];
 		int w = 64, h = 48;
 		if (room)
 			w = room->w, h = room->h;
@@ -522,16 +522,22 @@ void TAS::Overlay()
 		std::vector<xyzrhwdiff> vert(solids.count * 4);
 		std::vector<int> idx;
 		idx.reserve(solids.count * 6);
+		const float degtorad = 3.1415926535897932384626433832795f / 180.f;
 		for (auto &&solid : solids)
 		{
+#if 1 // TODO: figure out the field at 0x24
 			font4x6->Add(solid.x, solid.y, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 255, 255),
-				strprintf("%5.1f %5.1f %5.1f\n%8.4f %8.4f\n%p %.8x",
-					solid.unk10, solid.unk14, solid.unk18, solid.unk1c, solid.unk20, solid.unk24));
+				strprintf("%6.4f %6.4f %x",
+					solid.vel_x, solid.vel_y, solid.unk24));
+#endif
+			float pivot_x = solid.x + solid.pivot_x, pivot_y = solid.y + solid.pivot_y;
+			float angle = solid.rotdeg * degtorad;
 			for (int j = 0; j < 4; j++, i)
 			{
-				vert[i + j].x = solid.x + solid.w * !!(j & 1) - 0.5f;
-				vert[i + j].y = solid.y + solid.h * !!(j & 2) - 0.5f;
-				vert[i + j].z = 0; vert[i + j].w = 1; vert[i + j].color = D3DCOLOR_ARGB(128, 160, 160, 192);
+				float x = solid.x + solid.w * !!(j & 1), y = solid.y + solid.h * !!(j & 2);
+				vert[i + j].x = pivot_x + cosf(angle) * (x - pivot_x) - sinf(angle) * (y - pivot_y) - 0.5f;
+				vert[i + j].y = pivot_y + sinf(angle) * (x - pivot_x) + cosf(angle) * (y - pivot_y) - 0.5f;
+				vert[i + j].z = 0; vert[i + j].w = 1; vert[i + j].color = D3DCOLOR_ARGB(64, 160, 160, 192);
 			}
 			idx.insert(idx.end(), { i, i + 1, i + 3, i + 3, i + 2, i });
 			i += 4;

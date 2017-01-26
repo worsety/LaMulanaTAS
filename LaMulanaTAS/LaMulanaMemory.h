@@ -119,11 +119,11 @@ public:
 		float y;
 		float w;
 		float h;
-		float unk10;
-		float unk14;
-		float unk18;
-		float unk1c;
-		void *unk20;
+		float rotdeg;
+		float pivot_x;
+		float pivot_y;
+		float vel_x;
+		float vel_y;
 		int unk24;
 		object *obj;
 	};
