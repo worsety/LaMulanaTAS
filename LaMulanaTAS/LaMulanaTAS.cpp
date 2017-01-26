@@ -582,7 +582,7 @@ void TAS::Overlay()
 
 		font8x12->Add(10, 470, BMFALIGN_BOTTOM | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
 		font8x12->Add(630, 470, BMFALIGN_BOTTOM | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("RNG %d", memory.RNG));
-		font8x12->Draw();
+		font8x12->Draw(D3DCOLOR_ARGB(96,0,0,0));
 		D3D9CHECKED(oldstate->Apply());
 	}
 

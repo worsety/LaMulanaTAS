@@ -1,7 +1,8 @@
 Future features:
 	Patching tool
+	TAS Input display
 	Screen exit display
 	Current screen id display
 Enhancements:
 	Display all types of errors in the game window.  Maybe use GDI drawing on the window's DC in IncFrame since that should be between a Present and a Sleep?
-	Add a way to play at normal speed without vsync? The game's frame limiter isn't very good so vsync does need to remain the default and have a hotkey
+	Support non-default key mappings
