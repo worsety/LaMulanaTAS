@@ -211,11 +211,19 @@ public:
 		return 16 + *(int*)(base + 0xdbb4d4);
 	}
 
-	void setspeed(int frameinterval, bool vsync)
+	void setspeed(int frameinterval)
 	{
-		((D3DPRESENT_PARAMETERS*)(base + 0xDB6D90))->PresentationInterval = vsync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
-		*(base + 0x6D7BAB) = 0; // force device reset
 		*(int*)(base + 0xdbb4d4) = frameinterval - 16;
+	}
+
+	void setvsync(bool vsync)
+	{
+		UINT presentint = vsync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
+		if (((D3DPRESENT_PARAMETERS*)(base + 0xDB6D90))->PresentationInterval != presentint)
+		{
+			((D3DPRESENT_PARAMETERS*)(base + 0xDB6D90))->PresentationInterval = presentint;
+			*(base + 0x6D7BAB) = 0; // force device reset
+		}
 	}
 
 	void saveslot(int slot)

@@ -343,14 +343,13 @@ void TAS::IncFrame()
 		if (keys['P'].pressed)
 		{
 			running = true;
-			if (0 != memory.getspeed())
-				memory.setspeed(0, false);
+			memory.setspeed(0);
+			memory.setvsync(false);
 		}
 		if (keys[VK_OEM_4].pressed)
 		{
 			running = true;
-			if (16 != memory.getspeed())
-				memory.setspeed(16, true);
+			memory.setspeed(16);
 		}
 		if (keys['R'].pressed)
 			LoadTAS();
