@@ -20,8 +20,7 @@ File	Virtual
 0d961c	004da21c	Don't pause on window losing focus
 0d988e	004da48e	Change call to an early initialisation function to a wrapper
 0fe070	004fec70	black screen transition calculation
-			Made a few changes in here, not very pleased about it though
-			Basically it was checking if 500ms of real time have passed, but I changed it to the most typical frame count (29?)
+			Checks for 500ms of real time using a global (so two instances gives us screen mashing), replaced timeGetTime calls
 2abecb	006acacb	TAS init wrapper
 2abf54	006acb54	sleep wrapper
 2bf7b8	006c07b8	save dir => tsav (saving and load)

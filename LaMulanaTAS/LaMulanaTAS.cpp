@@ -48,6 +48,7 @@ class TAS
 public:
 	LaMulanaMemory memory;
 	int frame, frame_count;
+	std::pair<std::string, int> section;
 	std::map<int, std::unordered_set<int>> frame_inputs;
 	std::map<int, std::list<std::function<void()>>> frame_actions;
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
@@ -142,12 +143,13 @@ void TAS::LoadTAS()
 	frame_inputs.clear();
 	frame_inputs.emplace(0, std::unordered_set<int>());
 	frame_actions.clear();
+	section = decltype(section)("", -1);
 
 	std::map<std::string, int> marks;
 
 	std::regex re_atframe("@([0-9]+)"), re_addframes("\\+([0-9]+)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
 		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("save=([0-9]+)"), re_rng("rng(=([0-9]+))?([+-][0-9]+)?"),
-		re_mark("([a-zA-Z0-9]+):"), re_markrel("([a-zA-Z0-9]+):([0-9]+)");
+		re_mark("([a-zA-Z0-9]+):(:?)"), re_markrel("([a-zA-Z0-9]+):([0-9]+)");
 	try {
 		while (!f.eof())
 		{
@@ -174,6 +176,11 @@ void TAS::LoadTAS()
 				if (std::regex_match(token, m, re_mark))
 				{
 					marks[m[1]] = curframe;
+					if (m[2] == ':')
+					{
+						frame_actions.emplace(curframe, std::list<std::function<void()>>());
+						frame_actions.find(curframe)->second.push_back([=,mark = m[1].str()]() { section = decltype(section)(mark, curframe); });
+					}
 					continue;
 				}
 				if (std::regex_match(token, m, re_markrel))
@@ -571,10 +578,11 @@ void TAS::Overlay()
 		else
 			text += '\n';
 		text += strprintf(
-			"Frame %7d RNG %5d",
-			frame, memory.RNG);
+			"Frame %7d @%d%s",
+			frame_count, frame, section.second < 0 ? "" : strprintf(" %s:%d", section.first.data(), frame - section.second).data());
 
 		font8x12->Add(10, 470, BMFALIGN_BOTTOM | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
+		font8x12->Add(630, 470, BMFALIGN_BOTTOM | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("RNG %d", memory.RNG));
 		font8x12->Draw();
 		D3D9CHECKED(oldstate->Apply());
 	}
