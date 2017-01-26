@@ -9,6 +9,7 @@ extern "C" {
 	SHORT WINAPI TASGetKeyState(_In_ int nVirtKey);
 	DWORD WINAPI TASOnFrame(void);
 	void TASRender(void);
+	DWORD __stdcall TASTime(void);
 #ifdef __cplusplus
 }
 #endif

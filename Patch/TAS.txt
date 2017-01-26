@@ -23,7 +23,7 @@ File	Virtual
 			Made a few changes in here, not very pleased about it though
 			Basically it was checking if 500ms of real time have passed, but I changed it to the most typical frame count (29?)
 2abecb	006acacb	TAS init wrapper
-2abf49	006acb49	sleep wrapper
+2abf54	006acb54	sleep wrapper
 2bf7b8	006c07b8	save dir => tsav (saving and load)
 2bf7fc	006c07fc	time attack record dir => tasrec
 2bf844	006c0844	save and record dir names (CreateDirectory)
@@ -36,3 +36,4 @@ N/A	00dbb4c8	TASGetKeyState
 N/A	00dbb4cc	TasOnFrame
 N/A	00dbb4d0	TASRender
 N/A	00dbb4d4	sleep delta (-16 to not sleep)
+N/A	00dbb4d8	TASTime

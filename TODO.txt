@@ -5,5 +5,3 @@ Future features:
 Enhancements:
 	Display all types of errors in the game window.  Maybe use GDI drawing on the window's DC in IncFrame since that should be between a Present and a Sleep?
 	Add a way to play at normal speed without vsync? The game's frame limiter isn't very good so vsync does need to remain the default and have a hotkey
-Bugs:
-	Break the black screen logic I accidentally fixed when making it a consistent frame count, it's probably because despite being object code it uses a global and in screen mashing there are two instances.  At least this is a good hint as to how/why screen mashing works.

@@ -47,7 +47,7 @@ class TAS
 {
 public:
 	LaMulanaMemory memory;
-	int frame;
+	int frame, frame_count;
 	std::map<int, std::unordered_set<int>> frame_inputs;
 	std::map<int, std::list<std::function<void()>>> frame_actions;
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
@@ -355,6 +355,7 @@ void TAS::IncFrame()
 			memory.has_quicksave = 0;
 			memory.timeattack_cursor = -1;
 			frame = -2;
+			frame_count = 0;
 			running = resetting = true;
 		}
 	} while (!running && memory.game_state != 5);
@@ -367,7 +368,10 @@ void TAS::IncFrame()
 	// P toggles frame limiter
 
 	if (frame >= 0)
+	{
+		frame_count++;
 		resetting = false;
+	}
 }
 
 // If I could use D3DX this would be soooo much easier and faster
@@ -599,6 +603,11 @@ DWORD WINAPI TASOnFrame(void)
 void TASRender(void)
 {
 	tas->Overlay();
+}
+
+DWORD __stdcall TASTime(void)
+{
+	return tas->frame_count * 17;
 }
 
 HMODULE tasModule;

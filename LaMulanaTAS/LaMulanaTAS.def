@@ -4,3 +4,4 @@ EXPORTS
 	TASGetKeyState
 	TASOnFrame
 	TASRender
+	TASTime
