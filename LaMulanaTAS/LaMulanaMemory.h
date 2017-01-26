@@ -283,7 +283,8 @@ public:
 		int ov_x = x - (int)trunc(scroll.x * 0.1f);
 		int ov_y = y - (int)trunc(scroll.y * 0.1f);
 		unsigned char overlay = (ov_x >= 0 && ov_x < 64 && ov_y >= 0 && ov_y < 48) ? tile_overlay[ov_x][ov_y] :  0;
-		if (flags1[2] & 0x4000 || overlay & 0x80)
+		unsigned char maptile = gettile_map(x, y);
+		if (flags1[2] & 0x4000 || overlay >= 0x7f || overlay != 0 && maptile < 0x80)
 			return overlay;
 		return gettile_map(x, y);
 	}
