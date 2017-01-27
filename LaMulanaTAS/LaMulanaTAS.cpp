@@ -479,15 +479,15 @@ void TAS::Overlay()
 	{
 		CComPtr<IDirect3DTexture9> tiletex;
 		const auto room = memory.getroom();
-		const auto &scroll = memory.flags1[1] & 0x400 ? LaMulanaMemory::scrolling() : memory.scroll_db[memory.scroll_dbidx];
+		const auto scroll = memory.flags1[1] & 0x400 ? LaMulanaMemory::scrolling() : memory.scroll_db[memory.scroll_dbidx];
 		int w = 64, h = 48;
 		if (room)
 			w = room->w, h = room->h;
 		D3D9CHECKED(dev->CreateTexture(w, h, 1, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &tiletex, nullptr));
 		D3DLOCKED_RECT rect;
 		D3D9CHECKED(tiletex->LockRect(0, &rect, nullptr, D3DLOCK_DISCARD));
-		for (int x = 0; x < w; x++)
-			for (int y = 0; y < h; y++)
+		for (int y = max(0, (int)(scroll.y / 10)); y < min(h, 48 + (int)(scroll.y / 10)); y++)
+			for (int x = max(0, (int)(scroll.x / 10)); x < min(w, 64 + (int)(scroll.x / 10)); x++)
 			{
 				unsigned char tile = memory.gettile_effective(x, y);
 				D3DCOLOR* texel = (D3DCOLOR*)((char*)rect.pBits + y * rect.Pitch) + x;
@@ -495,7 +495,8 @@ void TAS::Overlay()
 					*texel = D3DCOLOR_ARGB(255, 255, 0, 0);
 				else
 					*texel = D3DCOLOR_ARGB(0, 0, 0, 0);
-				font4x6->Add(x * 10.f - scroll.x + 1.f, y * 10.f - scroll.y + 2.f, BMFALIGN_LEFT, D3DCOLOR_ARGB(64, 255, 255, 255), strprintf("%.2x", tile));
+				if (tile)
+					font4x6->Add(x * 10.f - scroll.x + 1.f, y * 10.f - scroll.y + 2.f, BMFALIGN_LEFT, D3DCOLOR_ARGB(64, 255, 255, 255), strprintf("%.2x", tile));
 			}
 		D3D9CHECKED(tiletex->UnlockRect(0));
 
