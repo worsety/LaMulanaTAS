@@ -405,6 +405,9 @@ void TAS::Overlay()
 		hv.resize(i + hitboxes.count * 6);
 		for (auto &&hitbox : hitboxes)
 		{
+#if 0
+			font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%.8x %.8x %.8x", hitbox.unk2, hitbox.unk3, hitbox.unk4));
+#endif
 			switch (type)
 			{
 			case 0:
@@ -419,6 +422,8 @@ void TAS::Overlay()
 				font4x6->Add(hitbox.x + hitbox.w, hitbox.y, BMFALIGN_RIGHT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 0, 0), strprintf("%d", hitbox.damage));
 				break;
 			}
+			if (hitbox.object->create == memory.iframes_create)
+				font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255), strprintf("%d %d", *(int*)&hitbox.object->unk_locals[4], *(int*)&hitbox.object->unk_locals[8]));
 			for (int vert = 0; vert < 6; vert++, i++)
 			{
 				int right = vert >= 1 && vert <= 3;

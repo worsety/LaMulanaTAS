@@ -20,8 +20,8 @@ public:
 			object *next, *prev; // used for processing order within a priority
 		};
 		struct {
-			bool(*create)(object*);
-			void(*update)(object*);
+			void(*create)(object*);
+			bool(*update)(object*);
 			void(*drawlist)(object*);
 			bool(*update_postcoldet)(object*);
 			void(*draw)(object*);
@@ -161,6 +161,7 @@ public:
 
 	void(*const kill_objects)() = (void(*)())(base + 0x607E90);
 	void(*const reset_game)() = (void(*)())(base + 0x4D9FB0);
+	void(*const iframes_create)(object*) = (void(*)(object*))(base + 0x5FFA80);
 
 	/*
 	jump, main, sub, item
