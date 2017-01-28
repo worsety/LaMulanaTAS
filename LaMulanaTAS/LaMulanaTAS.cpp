@@ -406,14 +406,16 @@ void TAS::Overlay()
 		for (auto &&hitbox : hitboxes)
 		{
 #if 0
-			font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%.8x %.8x %.8x", hitbox.unk2, hitbox.unk3, hitbox.unk4));
+			font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 255, 255),
+				strprintf("%.8x %.8x %.8x", hitbox.unk2, hitbox.unk3, hitbox.unk4));
 #endif
 			switch (type)
 			{
 			case 0:
 			case 3:
-				font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_LEFT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 0), strprintf("%d", hitbox.object->hp));
-				break;
+				font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_LEFT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 0),
+					strprintf("%d", (hitbox.object->create == memory.iframes_create ? (LaMulanaMemory::object*)hitbox.object->local_ptr[0] : hitbox.object)->hp));
+			break;
 			case 1:
 			case 4:
 			case 5:
@@ -423,7 +425,8 @@ void TAS::Overlay()
 				break;
 			}
 			if (hitbox.object->create == memory.iframes_create)
-				font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255), strprintf("%d %d", *(int*)&hitbox.object->unk_locals[4], *(int*)&hitbox.object->unk_locals[8]));
+				font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255),
+					strprintf("%d %d", *(int*)&hitbox.object->unk_locals[4], *(int*)&hitbox.object->unk_locals[8]));
 			for (int vert = 0; vert < 6; vert++, i++)
 			{
 				int right = vert >= 1 && vert <= 3;
