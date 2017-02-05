@@ -73,7 +73,7 @@ public:
 		}
 	}
 
-	bool running, resetting, show_overlay, hide_game;
+	bool running, resetting, show_overlay, show_exits, hide_game;
 	unsigned show_hitboxes, show_solids;
 	bool show_tiles;
 
@@ -85,7 +85,7 @@ public:
 	void LoadTAS();
 };
 
-TAS::TAS(char *base) : memory(base), frame(-1), running(true), show_overlay(true), hide_game(false), show_hitboxes(1 << 7 | 1 << 9 | 1 << 11)
+TAS::TAS(char *base) : memory(base), frame(-1), running(true), show_overlay(true), show_exits(false), hide_game(false), show_hitboxes(1 << 7 | 1 << 9 | 1 << 11)
 {
 	name2vk["up"] = VK_UP;
 	name2vk["right"] = VK_RIGHT;
@@ -328,6 +328,8 @@ void TAS::IncFrame()
 		}
 		if (keys['O'].pressed)
 			show_overlay = !show_overlay;
+		if (keys['K'].pressed)
+			show_exits = !show_exits;
 
 		for (auto &&k : hitboxkeys)
 			show_hitboxes ^= keys[k.vk].pressed << k.type;
@@ -577,8 +579,9 @@ void TAS::Overlay()
 		{
 			LaMulanaMemory::object &lemeza = *memory.lemeza_obj;
 			text += strprintf(
-				"X:%12.8f %.8x Y:%12.8f %.8x\n",
-				lemeza.x, *(unsigned*)&lemeza.x, lemeza.y, *(unsigned*)&lemeza.y);
+				"X:%12.8f %.8x Y:%12.8f %.8x %2d,%2d,%2d\n",
+				lemeza.x, *(unsigned*)&lemeza.x, lemeza.y, *(unsigned*)&lemeza.y,
+				memory.cur_zone, memory.cur_room, memory.cur_screen);
 		}
 		else
 			text += '\n';
@@ -591,6 +594,28 @@ void TAS::Overlay()
 		font8x12->Add(630, 470, BMFALIGN_BOTTOM | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("RNG %d", memory.RNG));
 		font8x12->Draw(D3DCOLOR_ARGB(96,0,0,0));
 		D3D9CHECKED(oldstate->Apply());
+	}
+
+	if (show_exits)
+	{
+		auto room = memory.getroom();
+		if (room)
+		{
+			struct { int idx; float x, y; int align; }
+			exits[] = {
+				{ 0, 288, 10, BMFALIGN_TOP },
+				{ 1, 630, 234, BMFALIGN_RIGHT },
+				{ 2, 288, 470, BMFALIGN_BOTTOM },
+				{ 3, 10, 234, BMFALIGN_LEFT },
+			};
+			for (auto i : exits)
+			{
+				auto exit = room->screens[memory.cur_screen].exits[i.idx];
+				font8x12->Add(i.x, i.y, i.align, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%2d,%2d,%2d", exit.zone, exit.room, exit.screen));
+			}
+			font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
+			D3D9CHECKED(oldstate->Apply());
+		}
 	}
 
 	memory.post_process();
