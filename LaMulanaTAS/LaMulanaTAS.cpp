@@ -417,7 +417,7 @@ void TAS::Overlay()
 			case 3:
 				font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_LEFT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 0),
 					strprintf("%d", (hitbox.object->create == memory.iframes_create ? (LaMulanaMemory::object*)hitbox.object->local_ptr[0] : hitbox.object)->hp));
-			break;
+				break;
 			case 1:
 			case 4:
 			case 5:
@@ -591,8 +591,40 @@ void TAS::Overlay()
 			frame_count, frame, sec == sections.end() ? "" : strprintf(" %s:%d", sec->second.data(), frame - sec->first).data());
 
 		font8x12->Add(10, 470, BMFALIGN_BOTTOM | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
-		font8x12->Add(630, 470, BMFALIGN_BOTTOM | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("RNG %d", memory.RNG));
-		font8x12->Draw(D3DCOLOR_ARGB(96,0,0,0));
+
+		text.clear();
+		static const struct { const char *name, *disp, *blank; }
+		inputs[] =
+		{
+			{"f1", "F1 ", ""},
+			{"f2", "F2 ", ""},
+			{"f3", "F3 ", ""},
+			{"f4", "F4 ", ""},
+			{"f5", "F5 ", ""},
+			{"f6", "F6 ", ""},
+			{"f7", "F7 ", ""},
+			{"f8", "F8 ", ""},
+			{"f9", "F9 ", ""},
+			{"ok", "Z", " "},
+			{"cancel", "X\n", " \n"},
+			{"+m", "+m ", ""},
+			{"-m", "-m ", ""},
+			{"+s", "+s ", ""},
+			{"-s", "-s ", ""},
+			{"jump", "Z", " "},
+			{"main", "X", " "},
+			{"sub", "C", " "},
+			{"item", "V", " "},
+			{"up", " U", "  "},
+			{"down", "D", " "},
+			{"left", "<", " "},
+			{"right", ">", " "},
+		};
+		for (auto input : inputs)
+			text += KeyPressed(name2vk[input.name]) ? input.disp : input.blank;
+		text += strprintf("\n\nRNG %d", memory.RNG);
+		font8x12->Add(630, 470, BMFALIGN_BOTTOM | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
+		font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
 		D3D9CHECKED(oldstate->Apply());
 	}
 
@@ -601,7 +633,7 @@ void TAS::Overlay()
 		auto room = memory.getroom();
 		if (room)
 		{
-			struct { int idx; float x, y; int align; }
+			static const struct { int idx; float x, y; int align; }
 			exits[] = {
 				{ 0, 288, 10, BMFALIGN_TOP },
 				{ 1, 630, 234, BMFALIGN_RIGHT },

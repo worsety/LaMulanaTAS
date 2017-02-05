@@ -133,10 +133,6 @@ std::vector<std::string> split(const std::string &text, char delim) {
 void BitmapFont::Add(float x, float y, int align, D3DCOLOR color, const std::string &text)
 {
 	std::vector<std::string> lines = split(text, '\n');
-	if (align & BMFALIGN_RIGHT)
-	{
-		x -= std::max_element(lines.begin(), lines.end(), [](std::string &left, std::string &right) { return left.size() < right.size(); })->size() * char_w;
-	}
 	if (align & BMFALIGN_BOTTOM) {
 		std::vector<std::string> lines = split(text, '\n');
 		y -= lines.size() * char_h;
@@ -144,12 +140,15 @@ void BitmapFont::Add(float x, float y, int align, D3DCOLOR color, const std::str
 
 	if (vert.size () < (chars + text.size()) * 4)
 		vert.resize((chars + text.size()) * 4);
-	float draw_x = x, draw_y = y;
+	auto line = lines.begin();
+	float draw_x = x - char_w * line++->size(), draw_y = y;
 	for (int c : text)
 	{
 		if (c == '\n')
 		{
 			draw_y += char_h, draw_x = x;
+			if (align & BMFALIGN_RIGHT)
+				draw_x -= char_w * line++->size();
 			continue;
 		}
 		for (int j = 0; j < 4; j++)
