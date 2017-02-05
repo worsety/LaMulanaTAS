@@ -110,8 +110,12 @@ public:
 	};
 
 	struct scrolling {
+		short unk00;
+		short w_screens, h_screens;
+		short unk06;
+		float w_20, h_20;
+		int unk10, unk14;
 		float x, y;
-		int unk08[6];
 	};
 
 	struct solid {
@@ -153,7 +157,7 @@ public:
 	char &cur_screen = *(char*)(base + 0xDB7007);
 
 	unsigned char &scroll_dbidx = *(unsigned char*)(base + 0xDB70CB);
-	scrolling(&scroll_db)[2] = *(scrolling(*)[2])(base + 0xDB7E00);
+	scrolling(&scroll_db)[2] = *(scrolling(*)[2])(base + 0xDB7DE8);
 
 	unsigned char &solids_dbidx = *(unsigned char*)(base + 0xDB70B2);
 	solid*(&solids_db)[2] = *(solid*(*)[2])(base + 0xDB70F4);
