@@ -579,9 +579,8 @@ void TAS::Overlay()
 		{
 			LaMulanaMemory::object &lemeza = *memory.lemeza_obj;
 			text += strprintf(
-				"X:%12.8f %.8x Y:%12.8f %.8x %2d,%2d,%2d\n",
-				lemeza.x, *(unsigned*)&lemeza.x, lemeza.y, *(unsigned*)&lemeza.y,
-				memory.cur_zone, memory.cur_room, memory.cur_screen);
+				"X:%12.8f %.8x Y:%12.8f %.8x\n",
+				lemeza.x, *(unsigned*)&lemeza.x, lemeza.y, *(unsigned*)&lemeza.y);
 		}
 		else
 			text += '\n';
@@ -645,6 +644,7 @@ void TAS::Overlay()
 				auto exit = room->screens[memory.cur_screen].exits[i.idx];
 				font8x12->Add(i.x, i.y, i.align, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%2d,%2d,%2d", exit.zone, exit.room, exit.screen));
 			}
+			font8x12->Add(288, 234, 0, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%2d,%2d,%2d", memory.cur_zone, memory.cur_room, memory.cur_screen));
 			font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
 			D3D9CHECKED(oldstate->Apply());
 		}
