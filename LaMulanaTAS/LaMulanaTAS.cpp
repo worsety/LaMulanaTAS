@@ -47,10 +47,11 @@ class TAS
 {
 public:
 	LaMulanaMemory memory;
-	int frame, frame_count;
+	int frame, frame_count, rngsteps;
 	std::map<int, std::string> sections;
 	std::map<int, std::unordered_set<int>> frame_inputs;
 	std::map<int, std::list<std::function<void()>>> frame_actions;
+	short currng = -1;
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
 	std::map<std::string, int> name2vk;
 	std::unique_ptr<BitmapFont> font4x6, font8x12;
@@ -269,6 +270,7 @@ void TAS::LoadTAS()
 						for (; steps < 0; ++steps)
 							rng = (rng + 31747) * 2405 & 0x7fff;
 						memory.RNG = rng;
+						currng = -1;
 					});
 					continue;
 				}
@@ -376,6 +378,11 @@ void TAS::IncFrame()
 	{
 		frame_count++;
 		resetting = false;
+	}
+	if (currng < 0)
+	{
+		currng = memory.RNG;
+		rngsteps = 0;
 	}
 }
 
@@ -621,7 +628,10 @@ void TAS::Overlay()
 		};
 		for (auto input : inputs)
 			text += KeyPressed(name2vk[input.name]) ? input.disp : input.blank;
-		text += strprintf("\n\nRNG %d", memory.RNG);
+		if ((unsigned)memory.RNG < 32768)
+			for (; currng != memory.RNG; rngsteps++)
+				currng = currng * 109 + 1021 & 0x7fff;
+		text += strprintf("\n\nRNG [%.6d] %5d", rngsteps, memory.RNG);
 		font8x12->Add(630, 470, BMFALIGN_BOTTOM | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
 		font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
 		D3D9CHECKED(oldstate->Apply());
