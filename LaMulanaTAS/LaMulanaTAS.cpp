@@ -23,6 +23,9 @@
 #include "d3d9.h"
 #include "atlbase.h"
 
+std::vector<std::pair<int, unsigned char>> LaMulanaMemory::objfixup::data_f;
+void(*LaMulanaMemory::objfixup::orig_create_f)(object*);
+
 /*
 
 @frame
@@ -51,6 +54,7 @@ public:
 	std::map<int, std::string> sections;
 	std::map<int, std::unordered_set<int>> frame_inputs;
 	std::map<int, std::list<std::function<void()>>> frame_actions;
+	std::vector<LaMulanaMemory::objfixup> objfixups;
 	short currng = -1;
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
 	std::map<std::string, int> name2vk;
@@ -74,7 +78,7 @@ public:
 		}
 	}
 
-	bool running, resetting, show_overlay, show_exits, hide_game;
+	bool running, resetting, show_overlay, show_exits, hide_game, has_reset;
 	unsigned show_hitboxes, show_solids;
 	bool show_tiles;
 
@@ -145,12 +149,21 @@ void TAS::LoadTAS()
 	frame_inputs.emplace(0, std::unordered_set<int>());
 	frame_actions.clear();
 	sections.clear();
+	objfixups.clear();
 
 	std::map<std::string, int> marks;
 
-	std::regex re_atframe("@([0-9]+)"), re_addframes("\\+([0-9]+)"), re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
-		re_goto("goto=([0-9]+)"), re_load("load=([0-9]+)"), re_save("save=([0-9]+)"), re_rng("rng(=([0-9]+))?([+-][0-9]+)?"),
-		re_mark("([a-zA-Z0-9]+)(::?)"), re_markrel("([a-zA-Z0-9]+):([0-9]+)");
+	std::regex
+		re_atframe("@([0-9]+)"),
+		re_addframes("\\+([0-9]+)"),
+		re_inputs("([0-9]*)=((\\^?[-+a-z0-9]+)(,(\\^?[-+a-z0-9]+))*)"),
+		re_goto("goto=([0-9]+)"),
+		re_load("load=([0-9]+)"),
+		re_save("save=([0-9]+)"),
+		re_rng("rng(=([0-9]+))?([+-][0-9]+)?"),
+		re_fixup("fixup=([a-z]+):([[:xdigit:]]+):([[:xdigit:]]+):((?:[[:xdigit:]][[:xdigit:]])+)"),
+		re_mark("([a-zA-Z0-9]+)(::?)"),
+		re_markrel("([a-zA-Z0-9]+):([0-9]+)");
 	try {
 		while (!f.eof())
 		{
@@ -274,6 +287,37 @@ void TAS::LoadTAS()
 					});
 					continue;
 				}
+				if (std::regex_match(token, m, re_fixup))
+				{
+					int type = std::stoi(m[2], 0, 16), off = std::stoi(m[3], 0, 16);
+					std::vector<std::pair<int, unsigned char>> data(m[4].length() / 2);
+					for (int i = 0; i != m[4].length(); i += 2)
+					{
+						data[i >> 1].first = off + (i >> 1);
+						data[i >> 1].second = std::stoi(m[4].str().substr(i, 2), 0, 16);
+					}
+					objfixups.emplace_back(&memory, type, data);
+					if (m[1] == "obj")
+					{
+						if (type >= 204)
+							throw parsing_exception(strprintf("Object fixup type %x out of bounds on line %d", type, linenum));
+						if (off >= sizeof(LaMulanaMemory::object))
+							throw parsing_exception(strprintf("Object fixup offset %x out of bounds on line %d", off, linenum));
+						if (!has_reset)
+							continue;
+						frame_actions.emplace(curframe, std::list<std::function<void()>>());
+						frame_actions.find(curframe)->second.push_back([&fixup = *--objfixups.end()]() {
+							fixup.inject();
+						});
+						frame_actions.emplace(curframe + 1, std::list<std::function<void()>>());
+						frame_actions.find(curframe + 1)->second.push_back([&fixup = *--objfixups.end()]() {
+							fixup.remove();
+						});
+					}
+					else
+						throw parsing_exception(strprintf("Unrecognised fixup type '%s' on line %d", m[1].str().data(), linenum));
+					continue;
+				}
 				if ("pause" == token)
 				{
 					frame_actions.emplace(curframe, std::list<std::function<void()>>());
@@ -363,7 +407,7 @@ void TAS::IncFrame()
 			memory.timeattack_cursor = -1;
 			frame = -2;
 			frame_count = 0;
-			running = resetting = true;
+			running = resetting = has_reset = true;
 		}
 	} while (!running && memory.game_state != 5);
 

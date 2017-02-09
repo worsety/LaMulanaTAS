@@ -163,6 +163,9 @@ public:
 	solid*(&solids_db)[2] = *(solid*(*)[2])(base + 0xDB70F4);
 	int(&solids_count)[2] = *(int(*)[2])(base + 0xDB70CC);
 
+	object*(&objects) = *(object**)(base + 0xDB95D8);
+	void(*(&objtypes)[204])(object*) = *(void(*(*)[204])(object*))(base + 0x6D30B8);
+
 	void(*const kill_objects)() = (void(*)())(base + 0x607E90);
 	void(*const reset_game)() = (void(*)())(base + 0x4D9FB0);
 	void(*const iframes_create)(object*) = (void(*)(object*))(base + 0x5FFA80);
@@ -212,7 +215,7 @@ public:
 	void scrub_objects()
 	{
 		// the game's very bad at actually resetting things, which is related to some of its bugs
-		char *objptr = *(char**)(base + 0xDB95D8);
+		char *objptr = (char*)objects;
 		for (int i = 0; i < 0x600; i++, objptr += 820)
 		{
 			// see initialisation function at 0x607C90
@@ -318,4 +321,29 @@ public:
 	{
 		return vararray<solid>(solids_db[solids_dbidx ^ 1], solids_count[solids_dbidx ^ 1]);
 	}
+
+	class objfixup {
+		LaMulanaMemory *memory;
+		int type;
+		std::vector<std::pair<int, unsigned char>> data;
+		static std::vector<std::pair<int, unsigned char>> data_f;
+		void(*orig_create)(object*);
+		static void(*orig_create_f)(object*);
+	public:
+		objfixup(LaMulanaMemory *memory, int type, std::vector<std::pair<int, unsigned char>> data) : memory(memory), type(type), data(data) {}
+		static void fixup_create(object* self)
+		{
+			for (auto i : data_f)
+				self->raw[i.first] = i.second;
+			orig_create_f(self);
+		}
+		void inject() {
+			orig_create_f = orig_create = memory->objtypes[type];
+			memory->objtypes[type] = fixup_create;
+			data_f = data;
+		}
+		void remove() {
+			memory->objtypes[type] = orig_create;
+		}
+	};
 };
