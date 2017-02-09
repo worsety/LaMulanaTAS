@@ -386,9 +386,6 @@ void TAS::IncFrame()
 	}
 }
 
-// If I could use D3DX this would be soooo much easier and faster
-// Intentionally avoiding setting any unnecessary state so we don't have to restore it
-// Only works if filtering is off
 void TAS::Overlay()
 {
 	IDirect3DDevice9 *dev = memory.id3d9dev();

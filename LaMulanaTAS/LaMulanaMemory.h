@@ -166,7 +166,19 @@ public:
 	void(*const kill_objects)() = (void(*)())(base + 0x607E90);
 	void(*const reset_game)() = (void(*)())(base + 0x4D9FB0);
 	void(*const iframes_create)(object*) = (void(*)(object*))(base + 0x5FFA80);
+	void(*const startup_create)(object*) = (void(*)(object*))(base + 0x622F80);
+	void(*const create_obj_inst_)(void(*create)(object*)) = (void(*)(void(*)(object*)))(base + 0x608130);
 
+	object *create_obj_inst(short prio, void(*create)(object*))
+	{
+		auto sigh = create_obj_inst_;
+		__asm {
+			push[create];
+			mov ax, [prio];
+			mov ecx, [sigh];
+			call ecx;
+		}
+	}
 	/*
 	jump, main, sub, item
 	ok,cancel,?,?
@@ -295,7 +307,7 @@ public:
 		const auto &scroll = scroll_db[scroll_dbidx];
 		int ov_x = x - (int)(scroll.x * 0.1f);
 		int ov_y = y - (int)(scroll.y * 0.1f);
-		unsigned char overlay = (ov_x >= 0 && ov_x < 64 && ov_y >= 0 && ov_y < 48) ? tile_overlay[ov_x][ov_y] :  0;
+		unsigned char overlay = (ov_x >= 0 && ov_x < 64 && ov_y >= 0 && ov_y < 48) ? tile_overlay[ov_x][ov_y] : 0;
 		unsigned char maptile = gettile_map(x, y);
 		if (flags1[2] & 0x4000 || overlay >= 0x7f || overlay != 0 && maptile < 0x80)
 			return overlay;
@@ -304,6 +316,6 @@ public:
 
 	vararray<solid> getsolids()
 	{
-		return vararray<solid>(solids_db[solids_dbidx^1], solids_count[solids_dbidx^1]);
+		return vararray<solid>(solids_db[solids_dbidx ^ 1], solids_count[solids_dbidx ^ 1]);
 	}
 };

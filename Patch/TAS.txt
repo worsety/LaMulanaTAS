@@ -36,3 +36,8 @@ N/A	00dbb4cc	TasOnFrame
 N/A	00dbb4d0	TASRender
 N/A	00dbb4d4	sleep delta (-16 to not sleep)
 N/A	00dbb4d8	TASTime
+
+Known bugs that affect TASing:
+Tai Sui's eyes reference the member at offset E8 in Tai Sui on creation... which is before Tai Sui initialises this member so they get the value from whatever last occupied that memory and set it.
+Chests use uninitialised memory, haven't analysed how but it affects when they open.
+Ghost Lord uses uninitialised memory.
