@@ -399,6 +399,7 @@ void TAS::IncFrame()
 		if (keys['R'].pressed)
 			LoadTAS();
 		if (keys['T'].pressed) {
+			has_reset = true;
 			LoadTAS();
 			memory.kill_objects();
 			memory.scrub_objects();
@@ -407,7 +408,7 @@ void TAS::IncFrame()
 			memory.timeattack_cursor = -1;
 			frame = -2;
 			frame_count = 0;
-			running = resetting = has_reset = true;
+			running = resetting = true;
 		}
 	} while (!running && memory.game_state != 5);
 
