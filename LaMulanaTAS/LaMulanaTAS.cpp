@@ -466,6 +466,13 @@ void TAS::Overlay()
 			case 3:
 				font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_LEFT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 0),
 					strprintf("%d", (hitbox.object->create == memory.iframes_create ? (LaMulanaMemory::object*)hitbox.object->local_ptr[0] : hitbox.object)->hp));
+				if (hitbox.object->create == memory.pot_create && hitbox.object->local_int[0])
+				{
+					static const char *droptypes[] = { "non", "$$$", "wgt", "shu", "rol", "spr", "flr", "bom", "chk", "ctr", "bul" };
+					int type = hitbox.object->local_int[0], quant = hitbox.object->local_int[1];
+					std::string typestr = type < sizeof droptypes / sizeof *droptypes ? droptypes[type] : strprintf("%3d", type);
+					font4x6->Add(hitbox.x, hitbox.y + hitbox.h, 0, D3DCOLOR_ARGB(255, 255, 255, 0), strprintf("%s x%d", typestr.data(), quant));
+				}
 				break;
 			case 1:
 			case 4:
@@ -527,7 +534,7 @@ void TAS::Overlay()
 		D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
 		D3D9CHECKED(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE));
 		D3D9CHECKED(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data()));
-		font4x6->Draw();
+		font4x6->Draw(D3DCOLOR_ARGB(128,0,0,0));
 		D3D9CHECKED(oldstate->Apply());
 	}
 

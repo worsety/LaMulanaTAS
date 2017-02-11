@@ -168,9 +168,11 @@ public:
 
 	void(*const kill_objects)() = (void(*)())(base + 0x607E90);
 	void(*const reset_game)() = (void(*)())(base + 0x4D9FB0);
+	void(*const create_obj_inst_)(void(*create)(object*)) = (void(*)(void(*)(object*)))(base + 0x608130);
+
 	void(*const iframes_create)(object*) = (void(*)(object*))(base + 0x5FFA80);
 	void(*const startup_create)(object*) = (void(*)(object*))(base + 0x622F80);
-	void(*const create_obj_inst_)(void(*create)(object*)) = (void(*)(void(*)(object*)))(base + 0x608130);
+	void(*const pot_create)(object*) = (void(*)(object*))(base + 0x633220);
 
 	object *create_obj_inst(short prio, void(*create)(object*))
 	{
