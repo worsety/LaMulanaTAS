@@ -79,7 +79,7 @@ public:
 	}
 
 	bool running, resetting, show_overlay, show_exits, hide_game, has_reset;
-	unsigned show_hitboxes, show_solids;
+	unsigned show_hitboxes, show_solids, show_loc;
 	bool show_tiles;
 
 	TAS(char *base);
@@ -376,6 +376,8 @@ void TAS::IncFrame()
 			show_overlay = !show_overlay;
 		if (keys['K'].pressed)
 			show_exits = !show_exits;
+		if (keys['L'].pressed)
+			show_loc = !show_loc;
 
 		for (auto &&k : hitboxkeys)
 			show_hitboxes ^= keys[k.vk].pressed << k.type;
@@ -620,6 +622,28 @@ void TAS::Overlay()
 		D3D9CHECKED(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE));
 		D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 4 * solids.count, 2 * solids.count, idx.data(), D3DFMT_INDEX32, vert.data(), sizeof vert[0]));
 		font4x6->Draw();
+		D3D9CHECKED(oldstate->Apply());
+	}
+
+	if (show_loc && memory.lemeza_spawned)
+	{
+		LaMulanaMemory::object &lemeza = *memory.lemeza_obj;
+		std::vector<xyzrhwdiff> vert(12);
+		vert[0].x = vert[1].x = lemeza.x + 10.f;
+		vert[2].x = vert[3].x = lemeza.x + 19.f;
+		vert[4].x = vert[5].x = lemeza.x + 29.f;
+		vert[6].y = vert[7].y = lemeza.y + 12.f;
+		vert[8].y = vert[9].y = lemeza.y + 40.f;
+		vert[10].y = vert[11].y = lemeza.y + 47.f;
+		for (size_t i = 0; i < 6; i++)
+			vert[i].y = -0.5f + 480.f * (i & 1);
+		for (size_t i = 6; i < vert.size(); i++)
+			vert[i].x = -0.5f + 640.f * (i & 1);
+		for (auto &v : vert)
+			v.z = 0, v.color = D3DCOLOR_ARGB(192, 255, 255, 0);
+		D3D9CHECKED(dev->SetTexture(0, 0));
+		D3D9CHECKED(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE));
+		D3D9CHECKED(dev->DrawPrimitiveUP(D3DPT_LINELIST, 6, vert.data(), sizeof vert[0]));
 		D3D9CHECKED(oldstate->Apply());
 	}
 
