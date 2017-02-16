@@ -78,9 +78,9 @@ public:
 		}
 	}
 
-	bool running, resetting, show_overlay, show_exits, hide_game, has_reset;
-	unsigned show_hitboxes, show_solids, show_loc;
-	bool show_tiles;
+	bool running, resetting, has_reset;
+	bool hide_game, show_overlay, show_exits, show_tiles, show_solids, show_loc;
+	unsigned show_hitboxes;
 
 	TAS(char *base);
 	bool KeyPressed(int vk);
@@ -90,7 +90,9 @@ public:
 	void LoadTAS();
 };
 
-TAS::TAS(char *base) : memory(base), frame(-1), running(true), show_overlay(true), show_exits(false), hide_game(false), show_hitboxes(1 << 7 | 1 << 9 | 1 << 11)
+TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0), running(true), has_reset(false),
+	hide_game(false), show_overlay(true), show_exits(false), show_solids(false), show_loc(false),
+	show_hitboxes(1 << 7 | 1 << 9 | 1 << 11)
 {
 	name2vk["up"] = VK_UP;
 	name2vk["right"] = VK_RIGHT;
