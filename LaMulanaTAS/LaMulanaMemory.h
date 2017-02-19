@@ -337,11 +337,11 @@ public:
 	{
 		auto loadgfx_ = (void(*)())(base+0x458E00);
 		__asm {
-			mov eax, loadgfx_
 			mov ecx, filename
 			mov esi, tex
-			call eax
 		}
+		// Ugh, if I use a call instruction VC++ assumes loadgfx doesn't destroy xmm registers, but this isn't guaranteed to not destroy ecx and esi
+		loadgfx_();
 	}
 
 	class objfixup {
