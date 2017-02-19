@@ -585,9 +585,6 @@ void TAS::Overlay()
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE));
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE));
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE));
 		D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 4, 2, idx, D3DFMT_INDEX16, vert, sizeof *vert));
 		font4x6->Draw(D3DCOLOR_ARGB(64, 0, 0, 0));
 		D3D9CHECKED(oldstate->Apply());

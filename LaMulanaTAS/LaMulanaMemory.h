@@ -79,34 +79,37 @@ public:
 
 	struct room
 	{
-		unsigned char unk00[4];
+		unsigned char unk00;
+		unsigned char layers;
+		unsigned char primary_layer; // lower is foreground, higher is background
+		unsigned char unk03;
+		unsigned char num_screens;
 		unsigned char unk05[3];
-		int unk08[2];
+		void *gfx_tiles;
+		void *unk0C;
 		screen *screens;
 		short w, h;
-		unsigned char *tiles; // w*h rowwise
+		unsigned char *hit_tiles; // w*h rowwise
 	};
 
 	// not 1:1 with fields
 	struct zone
 	{
-		unsigned char unk00[8];
+		unsigned char texsheet_idx;
+		unsigned char unk01;
+		unsigned char num_rooms;
+		unsigned char num_anims;
+		unsigned char unk04[4];
 		room *rooms;
-		void *unk0c[2];
-		int unk14;
+		void *anims;
+		void *unk10;
+		int index;
 	};
 
 	struct map
 	{
 		int num_zones;
 		zone *zones;
-	};
-
-	struct bossmap
-	{
-		int unk00[2];
-		room *rooms;
-		int unk0c[3];
 	};
 
 	struct scrolling {
@@ -148,7 +151,7 @@ public:
 	char &in_timeattack = *(char*)(base + 0x6D6FDB);
 	map &map_main = *(map*)(base + 0xDB70C0);
 	map &map_timeattack = *(map*)(base + 0xDB7DD4);
-	bossmap *&map_boss = *(bossmap**)(base + 0xDB7DE4);
+	zone *&map_boss = *(zone**)(base + 0xDB7DE4);
 	short &boss_mapidx = *(short*)(base + 0x6D7BA8);
 	short &boss_room = *(short*)(base + 0x6D6FD8);
 	unsigned char(&tile_overlay)[64][48] = *(unsigned char(*)[64][48])(base + 0xDB71B8); //colwise
@@ -304,7 +307,7 @@ public:
 	unsigned char gettile_map(int x, int y)
 	{
 		room *here = getroom();
-		return here ? here->tiles[y * here->w + x] : 0;
+		return here ? here->hit_tiles[y * here->w + x] : 0;
 	}
 
 	unsigned char gettile_effective(int x, int y)
