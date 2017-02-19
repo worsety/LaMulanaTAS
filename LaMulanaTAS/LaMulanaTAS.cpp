@@ -58,6 +58,7 @@ public:
 	short currng = -1;
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
 	std::map<std::string, int> name2vk;
+	IDirect3DDevice9 *curdev;
 	std::unique_ptr<BitmapFont> font4x6, font8x12;
 	struct {
 		CComPtr<IDirect3DTexture9> tex;
@@ -97,7 +98,8 @@ public:
 
 TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0), running(true), has_reset(false),
 hide_game(false), show_overlay(true), show_exits(false), show_solids(false), show_loc(false), show_tiles(0),
-show_hitboxes(1 << 7 | 1 << 9 | 1 << 11)
+show_hitboxes(1 << 7 | 1 << 9 | 1 << 11),
+curdev(nullptr)
 {
 	name2vk["up"] = VK_UP;
 	name2vk["right"] = VK_RIGHT;
@@ -443,6 +445,13 @@ void TAS::IncFrame()
 void TAS::Overlay()
 {
 	IDirect3DDevice9 *dev = memory.id3d9dev();
+	if (curdev != dev)
+	{
+		font4x6.reset();
+		font8x12.reset();
+		hit_parts.tex.p = hit_hex.tex.p = 0;
+		curdev = dev;
+	}
 
 	if (hide_game)
 		D3D9CHECKED(dev->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 0.f, 0));
