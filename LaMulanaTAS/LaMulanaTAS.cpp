@@ -656,6 +656,8 @@ void TAS::Overlay()
 			text.push_back(show_hitboxes & 1 << k.type ? k.dispkey : ' ');
 		text.push_back(show_solids ? '-' : ' ');
 		text.push_back(show_tiles ? '=' : ' ');
+		text.push_back(show_exits ? 'K' : ' ');
+		text.push_back(show_loc ? 'L' : ' ');
 		text.push_back('\n');
 		if (memory.lemeza_spawned)
 		{
