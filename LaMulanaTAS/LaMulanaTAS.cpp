@@ -59,6 +59,10 @@ public:
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
 	std::map<std::string, int> name2vk;
 	std::unique_ptr<BitmapFont> font4x6, font8x12;
+	struct {
+		CComPtr<IDirect3DTexture9> tex;
+		float texel_w, texel_h;
+	} hit_parts, hit_hex;
 
 	struct keystate {
 		unsigned char held : 1;
@@ -79,7 +83,8 @@ public:
 	}
 
 	bool running, resetting, has_reset;
-	bool hide_game, show_overlay, show_exits, show_tiles, show_solids, show_loc;
+	bool hide_game, show_overlay, show_exits, show_solids, show_loc;
+	int show_tiles;
 	unsigned show_hitboxes;
 
 	TAS(char *base);
@@ -91,8 +96,8 @@ public:
 };
 
 TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0), running(true), has_reset(false),
-	hide_game(false), show_overlay(true), show_exits(false), show_solids(false), show_loc(false),
-	show_hitboxes(1 << 7 | 1 << 9 | 1 << 11)
+hide_game(false), show_overlay(true), show_exits(false), show_solids(false), show_loc(false), show_tiles(0),
+show_hitboxes(1 << 7 | 1 << 9 | 1 << 11)
 {
 	name2vk["up"] = VK_UP;
 	name2vk["right"] = VK_RIGHT;
@@ -386,7 +391,7 @@ void TAS::IncFrame()
 		if (keys[VK_OEM_MINUS].pressed)
 			show_solids = !show_solids;
 		if (keys[VK_OEM_PLUS].pressed)
-			show_tiles = !show_tiles;
+			show_tiles = (show_tiles + 1) % 3;
 		if (keys[VK_BACK].pressed)
 			hide_game = !hide_game;
 		if (keys['P'].pressed)
@@ -439,16 +444,49 @@ void TAS::Overlay()
 {
 	IDirect3DDevice9 *dev = memory.id3d9dev();
 
-	if (!font4x6)
-		font4x6.reset(new BitmapFont(dev, 4, 6, tasModule, IDB_TOMTHUMB));
-	if (!font8x12)
-		font8x12.reset(new BitmapFont(dev, 8, 12, tasModule, IDB_SMALLFONT));
-
 	if (hide_game)
 		D3D9CHECKED(dev->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 0.f, 0));
 
 	CComPtr<IDirect3DStateBlock9> oldstate;
 	D3D9CHECKED(dev->CreateStateBlock(D3DSBT_ALL, &oldstate));
+
+	if (!font4x6)
+		font4x6.reset(new BitmapFont(dev, 4, 6, tasModule, IDB_TOMTHUMB));
+	if (!font8x12)
+		font8x12.reset(new BitmapFont(dev, 8, 12, tasModule, IDB_SMALLFONT));
+	if (!hit_parts.tex)
+	{
+		LaMulanaMemory::texture tex;
+		memset(&tex, 0, sizeof tex);
+		// this is 160x160, I hope this doesn't make a npot texture if not supported
+		memory.loadgfx("hit_parts.png", &tex);
+		hit_parts.tex.p = tex.tex;
+		hit_parts.texel_w = 1.f / tex.w;
+		hit_parts.texel_h = 1.f / tex.h;
+	}
+	if (!hit_hex.tex)
+	{
+		CComPtr<IDirect3DTexture9> tex;
+		CComPtr<IDirect3DSurface9> surf;
+		D3DLOCKED_RECT rect1, rect2;
+
+		D3D9CHECKED(dev->CreateRenderTarget(256, 256, D3DFMT_A8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &surf, nullptr));
+		for (int i = 0; i < 256; i++)
+			font4x6->Add(1.f + (i & 0x0f) * 10.f, 2.f + (i & 0xf0) / 16 * 10.f, 0, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%.2x", i));
+		D3D9CHECKED(dev->SetRenderTarget(0, surf));
+		font4x6->Draw();
+		D3D9CHECKED(dev->CreateTexture(256, 256, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &tex, nullptr));
+		D3D9CHECKED(surf->LockRect(&rect1, nullptr, D3DLOCK_READONLY));
+		D3D9CHECKED(tex->LockRect(0, &rect2, nullptr, 0));
+		for (int i = 0; i < 256; i++)
+			memcpy((char*)rect2.pBits + rect2.Pitch * i, (char*)rect1.pBits + rect1.Pitch * i, min(rect1.Pitch, rect2.Pitch));
+		D3D9CHECKED(surf->UnlockRect());
+		D3D9CHECKED(tex->UnlockRect(0));
+		hit_hex.tex = tex;
+		hit_hex.texel_w = 1.f / 256;
+		hit_hex.texel_h = 1.f / 256;
+		D3D9CHECKED(oldstate->Apply());
+	}
 
 	std::vector<xyzrhwdiff> hv;
 	for (int type = 0; type <= 12; type++)
@@ -538,55 +576,63 @@ void TAS::Overlay()
 		D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
 		D3D9CHECKED(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE));
 		D3D9CHECKED(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data()));
-		font4x6->Draw(D3DCOLOR_ARGB(128,0,0,0));
+		font4x6->Draw(D3DCOLOR_ARGB(128, 0, 0, 0));
 		D3D9CHECKED(oldstate->Apply());
 	}
 
 	if (show_tiles)
 	{
-		CComPtr<IDirect3DTexture9> tiletex;
+		auto hit_tex = show_tiles == 1 ? hit_parts : hit_hex;
 		const auto room = memory.getroom();
 		const auto scroll = memory.flags1[1] & 0x400 ? LaMulanaMemory::scrolling() : memory.scroll_db[memory.scroll_dbidx];
 		int w = 64, h = 48;
 		if (room)
 			w = room->w, h = room->h;
-		D3D9CHECKED(dev->CreateTexture(w, h, 1, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &tiletex, nullptr));
-		D3DLOCKED_RECT rect;
-		D3D9CHECKED(tiletex->LockRect(0, &rect, nullptr, D3DLOCK_DISCARD));
+
+		std::vector<USHORT> idx(6 * 64 * 48);
+		std::vector<xyzrhwdiffuv> vert(4 * 64 * 48);
+
+		int i = 0;
 		for (int y = max(0, (int)(scroll.y / 10)); y < min(h, 48 + (int)(scroll.y / 10)); y++)
 			for (int x = max(0, (int)(scroll.x / 10)); x < min(w, 64 + (int)(scroll.x / 10)); x++)
 			{
 				unsigned char tile = memory.gettile_effective(x, y);
-				D3DCOLOR* texel = (D3DCOLOR*)((char*)rect.pBits + y * rect.Pitch) + x;
-				if (tile & 0x80)
-					*texel = D3DCOLOR_ARGB(255, 255, 0, 0);
-				else
-					*texel = D3DCOLOR_ARGB(0, 0, 0, 0);
-				if (tile)
-					font4x6->Add(x * 10.f - scroll.x + 1.f, y * 10.f - scroll.y + 2.f, BMFALIGN_LEFT, D3DCOLOR_ARGB(64, 255, 255, 255), strprintf("%.2x", tile));
+				if (!tile)
+					continue;
+
+				for (int j = 0; j < 4; j++)
+				{
+					float u = (tile & 0x0f) * (10.f * hit_tex.texel_w), v = (tile & 0xf0) / 16 * (10.f * hit_tex.texel_h);
+					vert[i * 4 + j].x = x * 10 + 10 * !!(j & 1) - scroll.x - 0.5f;
+					vert[i * 4 + j].y = y * 10 + 10 * !!(j & 2) - scroll.y - 0.5f;
+					vert[i * 4 + j].u = u + (10.f * hit_tex.texel_w) * !!(j & 1);
+					vert[i * 4 + j].v = v + (10.f * hit_tex.texel_h) * !!(j & 2);
+					vert[i * 4 + j].z = 0;
+					vert[i * 4 + j].w = 1;
+					vert[i * 4 + j].color = D3DCOLOR_ARGB(128, 255, 255, 255);
+				}
+
+				idx[i * 6 + 0] = i * 4 + 0;
+				idx[i * 6 + 1] = i * 4 + 1;
+				idx[i * 6 + 2] = i * 4 + 3;
+				idx[i * 6 + 3] = i * 4 + 3;
+				idx[i * 6 + 4] = i * 4 + 2;
+				idx[i * 6 + 5] = i * 4 + 0;
+
+				i++;
 			}
-		D3D9CHECKED(tiletex->UnlockRect(0));
 
-		USHORT idx[6] = { 0, 1, 3, 3, 2, 0 };
-		xyzrhwdiffuv vert[4];
-		for (int i = 0; i < 4; i++)
-		{
-			vert[i].x = 10 * w * !!(i & 1) - scroll.x - 0.5f;
-			vert[i].y = 10 * h * !!(i & 2) - scroll.y - 0.5f;
-			vert[i].u = 1.f * !!(i & 1);
-			vert[i].v = 1.f * !!(i & 2);
-			vert[i].z = 0; vert[i].w = 1; vert[i].color = D3DCOLOR_ARGB(64, 255, 255, 255);
-		}
-
-		D3D9CHECKED(dev->SetTexture(0, tiletex));
+		D3D9CHECKED(dev->SetTexture(0, hit_tex.tex));
 		D3D9CHECKED(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1));
 		D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
 		D3D9CHECKED(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA));
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE));
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE));
 		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE));
-		D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 4, 2, idx, D3DFMT_INDEX16, vert, sizeof *vert));
-		font4x6->Draw(D3DCOLOR_ARGB(64, 0, 0, 0));
+		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE));
+		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE));
+		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE));
+		D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, i * 4, i * 2, idx.data(), D3DFMT_INDEX16, vert.data(), sizeof vert[0]));
 		D3D9CHECKED(oldstate->Apply());
 	}
 
@@ -665,7 +711,9 @@ void TAS::Overlay()
 		}
 		else
 			text += '\n';
-		auto sec = --sections.upper_bound(frame);
+		auto sec = sections.upper_bound(frame);
+		if (sec != sections.end())
+			--sec;
 		text += strprintf(
 			"Frame %7d @%d%s",
 			frame_count, frame, sec == sections.end() ? "" : strprintf(" %s:%d", sec->second.data(), frame - sec->first).data());

@@ -135,6 +135,12 @@ public:
 		object *obj;
 	};
 
+	struct texture {
+		IDirect3DTexture9 *tex;
+		short w, h;
+		int unk08, unk0C, unk10, unk14;
+	};
+
 	char &kb_enabled = *(base + 0x6D5820);
 	HWND &window = *(HWND*)(base + 0xDB6FB8);
 	void(*&post_process)() = *(void(**)())(base + 0x6D8F74);
@@ -325,6 +331,17 @@ public:
 	vararray<solid> getsolids()
 	{
 		return vararray<solid>(solids_db[solids_dbidx ^ 1], solids_count[solids_dbidx ^ 1]);
+	}
+
+	void loadgfx(const char *filename, texture *tex)
+	{
+		auto loadgfx_ = (void(*)())(base+0x458E00);
+		__asm {
+			mov eax, loadgfx_
+			mov ecx, filename
+			mov esi, tex
+			call eax
+		}
 	}
 
 	class objfixup {
