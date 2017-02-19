@@ -183,15 +183,22 @@ public:
 	void(*const startup_create)(object*) = (void(*)(object*))(base + 0x622F80);
 	void(*const pot_create)(object*) = (void(*)(object*))(base + 0x633220);
 
+	// This function is empty, I'm literally calling it just to prevent the compiler from assuming it knows what registers are and aren't destroyed wtf
+	void(*const noop)() = (void(*)())(base + 0x458FF0);
+
 	object *create_obj_inst(short prio, void(*create)(object*))
 	{
 		auto sigh = create_obj_inst_;
+		object *obj;
 		__asm {
 			push[create];
 			mov ax, [prio];
 			mov ecx, [sigh];
 			call ecx;
+			mov obj, eax;
 		}
+		noop();
+		return obj;
 	}
 	/*
 	jump, main, sub, item
@@ -335,13 +342,14 @@ public:
 
 	void loadgfx(const char *filename, texture *tex)
 	{
-		auto loadgfx_ = (void(*)())(base+0x458E00);
+		auto loadgfx_ = (void(*)())(base + 0x458E00);
 		__asm {
-			mov ecx, filename
-			mov esi, tex
+			mov eax, loadgfx_;
+			mov ecx, filename;
+			mov esi, tex;
+			call eax;
 		}
-		// Ugh, if I use a call instruction VC++ assumes loadgfx doesn't destroy xmm registers, but this isn't guaranteed to not destroy ecx and esi
-		loadgfx_();
+		noop();
 	}
 
 	class objfixup {
