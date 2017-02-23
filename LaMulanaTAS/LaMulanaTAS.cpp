@@ -721,7 +721,7 @@ void TAS::Overlay()
 		else
 			text += '\n';
 		auto sec = sections.upper_bound(frame);
-		if (sec != sections.end())
+		if (sec != sections.begin())
 			--sec;
 		text += strprintf(
 			"Frame %7d @%d%s",
