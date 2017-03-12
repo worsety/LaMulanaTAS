@@ -532,6 +532,10 @@ void TAS::Overlay()
 			case 10:
 				font4x6->Add(hitbox.x + hitbox.w, hitbox.y, BMFALIGN_RIGHT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 0, 0), strprintf("%d", hitbox.damage));
 				break;
+			case 12:
+				if (hitbox.object->create == memory.drop_create)
+					font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255), strprintf("%d", hitbox.object->local_int[1]));
+				break;
 			}
 			if (hitbox.object->create == memory.iframes_create)
 				font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255),

@@ -182,6 +182,7 @@ public:
 	void(*const iframes_create)(object*) = (void(*)(object*))(base + 0x5FFA80);
 	void(*const startup_create)(object*) = (void(*)(object*))(base + 0x622F80);
 	void(*const pot_create)(object*) = (void(*)(object*))(base + 0x633220);
+	void(*const drop_create)(object*) = (void(*)(object*))(base + 0x455930);
 
 	// This function is empty, I'm literally calling it just to prevent the compiler from assuming it knows what registers are and aren't destroyed wtf
 	void(*const noop)() = (void(*)())(base + 0x458FF0);
