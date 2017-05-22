@@ -507,7 +507,7 @@ void TAS::Overlay()
 		hv.resize(i + hitboxes.count * 6);
 		for (auto &&hitbox : hitboxes)
 		{
-			bool has_iframes = hitbox.object->create == memory.iframes_create;
+			bool has_iframes = memory.iframes_create == hitbox.object->create;
 			LaMulanaMemory::object &object = has_iframes ? *(LaMulanaMemory::object*)hitbox.object->local_ptr[0] : *hitbox.object;
 #if 0
 			font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 255, 255),
@@ -518,7 +518,7 @@ void TAS::Overlay()
 			case 0:
 			case 3:
 				font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_LEFT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 0), strprintf("%d", object.hp));
-				if (object.create == memory.pot_create && object.local_int[0])
+				if (memory.pot_create == object.create && object.local_int[0])
 				{
 					static const char *droptypes[] = { "non", "$$$", "wgt", "shu", "rol", "spr", "flr", "bom", "chk", "ctr", "bul" };
 					int type = object.local_int[0], quant = object.local_int[1];
@@ -526,7 +526,7 @@ void TAS::Overlay()
 					font4x6->Add(hitbox.x, hitbox.y + hitbox.h, 0, D3DCOLOR_ARGB(255, 255, 255, 0), strprintf("%s x%d", typestr.data(), quant));
 				}
 				//font4x6->Add(hitbox.x + hitbox.w, hitbox.y + hitbox.h, BMFALIGN_TOP | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 0, 255, 255), strprintf("%d", object.state));
-				if (object.create = memory.mother5_create)
+				if (memory.mother5_create == object.create)
 				{
 					font4x6->Add(hitbox.x, hitbox.y + hitbox.h + 6.f, BMFALIGN_TOP | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%d", *(int*)&object.unk_locals[0x24]));
 					font4x6->Add(hitbox.x + hitbox.w, hitbox.y + hitbox.h + 6.f, BMFALIGN_TOP | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%d", *(int*)&object.unk_locals[0x8]));
@@ -540,7 +540,7 @@ void TAS::Overlay()
 				font4x6->Add(hitbox.x + hitbox.w, hitbox.y, BMFALIGN_RIGHT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 0, 0), strprintf("%d", hitbox.damage));
 				break;
 			case 12:
-				if (object.create == memory.drop_create)
+				if (memory.drop_create == object.create)
 					font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255), strprintf("%d", object.local_int[1]));
 				break;
 			}
