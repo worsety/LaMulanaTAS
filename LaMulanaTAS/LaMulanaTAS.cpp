@@ -507,6 +507,8 @@ void TAS::Overlay()
 		hv.resize(i + hitboxes.count * 6);
 		for (auto &&hitbox : hitboxes)
 		{
+			bool has_iframes = hitbox.object->create == memory.iframes_create;
+			LaMulanaMemory::object &object = has_iframes ? *(LaMulanaMemory::object*)hitbox.object->local_ptr[0] : *hitbox.object;
 #if 0
 			font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 255, 255),
 				strprintf("%.8x %.8x %.8x", hitbox.unk2, hitbox.unk3, hitbox.unk4));
@@ -515,15 +517,15 @@ void TAS::Overlay()
 			{
 			case 0:
 			case 3:
-				font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_LEFT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 0),
-					strprintf("%d", (hitbox.object->create == memory.iframes_create ? (LaMulanaMemory::object*)hitbox.object->local_ptr[0] : hitbox.object)->hp));
-				if (hitbox.object->create == memory.pot_create && hitbox.object->local_int[0])
+				font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_LEFT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 0), strprintf("%d", object.hp));
+				if (object.create == memory.pot_create && object.local_int[0])
 				{
 					static const char *droptypes[] = { "non", "$$$", "wgt", "shu", "rol", "spr", "flr", "bom", "chk", "ctr", "bul" };
-					int type = hitbox.object->local_int[0], quant = hitbox.object->local_int[1];
+					int type = object.local_int[0], quant = object.local_int[1];
 					std::string typestr = type < sizeof droptypes / sizeof *droptypes ? droptypes[type] : strprintf("%3d", type);
 					font4x6->Add(hitbox.x, hitbox.y + hitbox.h, 0, D3DCOLOR_ARGB(255, 255, 255, 0), strprintf("%s x%d", typestr.data(), quant));
 				}
+				//font4x6->Add(hitbox.x + hitbox.w, hitbox.y + hitbox.h, BMFALIGN_TOP | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%d", object.state));
 				break;
 			case 1:
 			case 4:
@@ -533,13 +535,13 @@ void TAS::Overlay()
 				font4x6->Add(hitbox.x + hitbox.w, hitbox.y, BMFALIGN_RIGHT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 0, 0), strprintf("%d", hitbox.damage));
 				break;
 			case 12:
-				if (hitbox.object->create == memory.drop_create)
-					font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255), strprintf("%d", hitbox.object->local_int[1]));
+				if (object.create == memory.drop_create)
+					font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255), strprintf("%d", object.local_int[1]));
 				break;
 			}
-			if (hitbox.object->create == memory.iframes_create)
+			if (object.create == memory.iframes_create)
 				font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255),
-					strprintf("%d %d", *(int*)&hitbox.object->unk_locals[4], *(int*)&hitbox.object->unk_locals[8]));
+					strprintf("%d %d", *(int*)&object.unk_locals[4], *(int*)&object.unk_locals[8]));
 			for (int vert = 0; vert < 6; vert++, i++)
 			{
 				int right = vert >= 1 && vert <= 3;

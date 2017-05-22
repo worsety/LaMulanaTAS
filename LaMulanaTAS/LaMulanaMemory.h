@@ -27,7 +27,7 @@ public:
 			void(*draw)(object*);
 			void(*destroy)(object*);
 			void(*hitbox)(object*);
-			char pad_locals[4];
+			int state;
 			// although I'm calling them locals, there is other private storage in objects
 			// also arguments passed at construction time go into these three arrays
 			int local_int[32];
