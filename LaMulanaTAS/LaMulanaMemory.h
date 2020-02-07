@@ -8,45 +8,71 @@ class LaMulanaMemory
 public:
 	LaMulanaMemory(char *base_) : base(base_) {}
 
+	struct drawdata {
+		float w, h;
+		unsigned vert_rgba[4];
+		int unk18, unk1c;
+		float u1, v1, u2, v2;
+		IDirect3DTexture9 *tex;
+		char unk34[0x18];
+		int unk4c;
+		float texel_w, texel_h;
+	};
+
 	union object
 	{
+		// IMPORTANT: This is just a common structure for objects, most fields are unimplemented for any given object
+		// There is a lot of guesswork here, don't assume I know what I'm talking about
 		char raw[0x334];
 		struct {
-			char pad_list[0x2d8];
-			int nextidx, previdx; // used for object allocation
-			short priority, pad_idx;
-			int idx;
-			char unk_list[8];
-			object *next, *prev; // used for processing order within a priority
-		};
-		struct {
-			void(*create)(object*);
-			bool(*update)(object*);
-			void(*drawlist)(object*);
-			bool(*update_postcoldet)(object*);
-			void(*draw)(object*);
-			void(*destroy)(object*);
-			void(*hitbox)(object*);
+			void (*create)(object*);
+			bool (*update)(object*);
+			void (*drawlist)(object*);
+			bool (*update_postcoldet)(object*);
+			void (*draw)(object*);
+			void (*destroy)(object*);
+			void (*hitbox)(object*);
 			int state;
 			// although I'm calling them locals, there is other private storage in objects
-			// also arguments passed at construction time go into these three arrays
+			// arguments passed at construction time go into these three arrays
 			int local_int[32];
 			void *local_ptr[16];
-			char unk_locals[0x80];
+			int private_int[32]; // no arguments, pure local storage
 			float local_float[32];
-			float x, y;
-		};
-		struct {
-			char pad_hp[0x204];
+			float x, y, z; // usually screen coordinates
+			// I think only lemeza and moving platforms even implement these, also why is there a prev_z?
+			float prev_x, prev_y, prev_z;
+			// don't pay attention to these names, beyond being xy I don't really know
+			// sometimes it seems to be room coordinates when x,y are screen coordinates but sometimes not
+			// also z is just my inference, nothing uses it
+			float room_x, room_y, room_z;
 			int hp;
-		};
-		struct {
-			char pad_tex[0x238];
-			IDirect3DTexture9 *texture;
-			char pad_tex2[0x1c];
-			float texel_w, texel_h;
+			drawdata drawdata;
+			unsigned anim_frame;
+			unsigned transformation;
+			int unk268; // never used, no clue
+			unsigned char test_count;
+			struct byteop *tests;
+			int processing_flags;
+			char unk278[0x2d8-0x278]; // a bunch of this is somewhat known actually
+			short nextidx, previdx; // used for finding free slots for allocation
+			short priority;
+			int idx;
+			char unk2e4[8]; // actually not unknown at all, sorry
+			object *next, *prev; // used for processing order within a priority
+			char db[3]; // I have specifics but they're wrong
+			char zone, room, screen;
+			char unk2fa[0x308-0x2fa];
+			int draw_priority;
+			int unk30c;
+			int screen_x, screen_y; // definitely ignore these names apart from the x/y part
+			int unk318[6]; // performance counters I think
+			// set to the same as create during allocation, but never used
+			// you'd think this means it's for rtti but create is used for that too
+			void (*create2)(object*);
 		};
 	};
+	static_assert(offsetof(object, create2) == 0x330, "Error in object structure");
 
 	struct hitbox
 	{
@@ -141,67 +167,53 @@ public:
 		int unk08, unk0C, unk10, unk14;
 	};
 
-	char &kb_enabled = *(base + 0x6D5820);
-	HWND &window = *(HWND*)(base + 0xDB6FB8);
-	void(*&post_process)() = *(void(**)())(base + 0x6D8F74);
+	char &kb_enabled = *(base + 0x6d3618);
+	HWND &window = *(HWND*)(base + 0xdb4b68);
+	void (*&post_process)() = *(void (**)())(base + 0x6d6b64);
 
-	short &RNG = *(short *)(base + 0x6D6C58);
-	int &game_state = *(int*)(base + 0xDB6FD0);
-	char &has_quicksave = *(base + 0x6D4B6F);
-	short &timeattack_cursor = *(short*)(base + 0x6D2218);
-	int &lemeza_spawned = *(int*)(base + 0xDB998C);
-	object *&lemeza_obj = *(object**)(base + 0xDB9988);
-	unsigned(&flags1)[5] = *(unsigned(*)[5])(base + 0x6D7BC8);
-	scrolling(&scroll)[2] = *(scrolling(*)[2])(base + 0xDB7E00);
+	short &rng = *(short *)(base + 0x6d4a50);
+	int &game_state = *(int*)(base + 0xdb4b80);
+	char &has_quicksave = *(base + 0x6d2967);
+	short &timeattack_cursor = *(short*)(base + 0x6d0218);
+	int &lemeza_spawned = *(int*)(base + 0xdb753c);
+	object *&lemeza_obj = *(object**)(base + 0xdb7538);
+	unsigned (&flags1)[5] = *(unsigned (*)[5])(base + 0x6d59c0);
 
-	char &in_timeattack = *(char*)(base + 0x6D6FDB);
-	map &map_main = *(map*)(base + 0xDB70C0);
-	map &map_timeattack = *(map*)(base + 0xDB7DD4);
-	zone *&map_boss = *(zone**)(base + 0xDB7DE4);
-	short &boss_mapidx = *(short*)(base + 0x6D7BA8);
-	short &boss_room = *(short*)(base + 0x6D6FD8);
-	unsigned char(&tile_overlay)[64][48] = *(unsigned char(*)[64][48])(base + 0xDB71B8); //colwise
-	char &cur_zone = *(char*)(base + 0xDB702E);
-	char &cur_room = *(char*)(base + 0xDB7006);
-	char &cur_screen = *(char*)(base + 0xDB7007);
+	char &in_timeattack = *(char*)(base + 0x6d4dd3);
+	map &map_main = *(map*)(base + 0xdb4c70);
+	map &map_timeattack = *(map*)(base + 0xdb5984);
+	zone *&map_boss = *(zone**)(base + 0xdb5994);
+	short &boss_mapidx = *(short*)(base + 0x6d59a0);
+	short &boss_room = *(short*)(base + 0x6d4dd0);
+	unsigned char(&tile_overlay)[64][48] = *(unsigned char(*)[64][48])(base + 0xdb4d68); //colwise
+	char &cur_zone = *(char*)(base + 0xdb4bb7);
+	char &cur_room = *(char*)(base + 0xdb4bb3);
+	char &cur_screen = *(char*)(base + 0xdb4bb6);
 
-	unsigned char &scroll_dbidx = *(unsigned char*)(base + 0xDB70CB);
-	scrolling(&scroll_db)[2] = *(scrolling(*)[2])(base + 0xDB7DE8);
+	unsigned char &scroll_dbidx = *(unsigned char*)(base + 0xdb4c7a);
+	scrolling (&scroll_db)[2] = *(scrolling(*)[2])(base + 0xdb5998);
 
-	unsigned char &solids_dbidx = *(unsigned char*)(base + 0xDB70B2);
-	solid*(&solids_db)[2] = *(solid*(*)[2])(base + 0xDB70F4);
-	int(&solids_count)[2] = *(int(*)[2])(base + 0xDB70CC);
+	unsigned char &solids_dbidx = *(unsigned char*)(base + 0xdb4bdf);
+	solid* (&solids_db)[2] = *(solid*(*)[2])(base + 0xdb4ca4);
+	int (&solids_count)[2] = *(int(*)[2])(base + 0xdb4c7c);
 
-	object*(&objects) = *(object**)(base + 0xDB95D8);
-	void(*(&objtypes)[204])(object*) = *(void(*(*)[204])(object*))(base + 0x6D30B8);
+	object* (&objects) = *(object**)(base + 0xdb7188);
+	void (*(&objtypes)[204])(object*) = *(void (*(*)[204])(object*))(base + 0x6d10b8);
 
-	void(*const kill_objects)() = (void(*)())(base + 0x607E90);
-	void(*const reset_game)() = (void(*)())(base + 0x4D9FB0);
-	void(*const create_obj_inst_)(void(*create)(object*)) = (void(*)(void(*)(object*)))(base + 0x608130);
+	void (*const kill_objects)() = (void (*)())(base + 0x6072d0);
+	void (*const reset_game)() = (void (*)())(base + 0x4d9690);
+	void (*const create_obj_inst_)(void (*create)(object*)) = (void (*)(void (*)(object*)))(base + 0x607570);
+	void (**const sleep)(int) = (void (**)(int))(base + 0x6d4f68);
 
-	void(*const iframes_create)(object*) = (void(*)(object*))(base + 0x5FFA80);
-	void(*const startup_create)(object*) = (void(*)(object*))(base + 0x622F80);
-	void(*const pot_create)(object*) = (void(*)(object*))(base + 0x633220);
-	void(*const drop_create)(object*) = (void(*)(object*))(base + 0x455930);
-	void(*const mother5_create)(object*) = (void(*)(object*))(base + 0x54F5E0);
+	void (*const iframes_create)(object*) = (void (*)(object*))(base + 0x5feeb0);
+	void (*const startup_create)(object*) = (void (*)(object*))(base + 0x6222f0);
+	void (*const pot_create)(object*) = (void (*)(object*))(base + 0x632470);
+	void (*const drop_create)(object*) = (void (*)(object*))(base + 0x455960);
+	void (*const mother5_create)(object*) = (void (*)(object*))(base + 0x54ea60);
 
 	// This function is empty, I'm literally calling it just to prevent the compiler from assuming it knows what registers are and aren't destroyed wtf
-	void(*const noop)() = (void(*)())(base + 0x458FF0);
+	void (*const noop)() = (void (*)())(base + 0x4f6540);
 
-	object *create_obj_inst(short prio, void(*create)(object*))
-	{
-		auto sigh = create_obj_inst_;
-		object *obj;
-		__asm {
-			push[create];
-			mov ax, [prio];
-			mov ecx, [sigh];
-			call ecx;
-			mov obj, eax;
-		}
-		noop();
-		return obj;
-	}
 	/*
 	jump, main, sub, item
 	ok,cancel,?,?
@@ -216,7 +228,7 @@ public:
 	*/
 	unsigned char * KeyMappings()
 	{
-		unsigned char *settings = *(unsigned char**)(base + 0xDB6F14);
+		unsigned char *settings = *(unsigned char**)(base + 0xdb4b54);
 		if (!settings)
 			return nullptr;
 		return settings + 0x5c;
@@ -224,12 +236,12 @@ public:
 
 	IDirect3D9 * id3d9()
 	{
-		return *(IDirect3D9**)(base + 0xDB9998);
+		return *(IDirect3D9**)(base + 0xdb7548);
 	}
 
 	IDirect3DDevice9 * id3d9dev()
 	{
-		return *(IDirect3DDevice9**)(base + 0xDB999C);
+		return *(IDirect3DDevice9**)(base + 0xdb754c);
 	}
 
 	void scrub_objects()
@@ -238,7 +250,7 @@ public:
 		char *objptr = (char*)objects;
 		for (int i = 0; i < 0x600; i++, objptr += 820)
 		{
-			// see initialisation function at 0x607C90
+			// see init_objects at 0x6070d0
 			memset(objptr, 0, 0x280);
 			memset(objptr + 0x288, 0, 0x2d8 - 0x288);
 			*(int*)(objptr + 0x2e4) = 0;
@@ -246,61 +258,51 @@ public:
 		}
 	}
 
-	int getspeed()
-	{
-		return 16 + *(int*)(base + 0xdbb4d4);
-	}
-
-	void setspeed(int frameinterval)
-	{
-		*(int*)(base + 0xdbb4d4) = frameinterval - 16;
-	}
-
 	void setvsync(bool vsync)
 	{
 		UINT presentint = vsync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
-		if (((D3DPRESENT_PARAMETERS*)(base + 0xDB6D90))->PresentationInterval != presentint)
+		if (((D3DPRESENT_PARAMETERS*)(base + 0xdb49c4))->PresentationInterval != presentint)
 		{
-			((D3DPRESENT_PARAMETERS*)(base + 0xDB6D90))->PresentationInterval = presentint;
-			*(base + 0x6D7BAB) = 0; // force device reset
+			((D3DPRESENT_PARAMETERS*)(base + 0xdb49c4))->PresentationInterval = presentint;
+			*(base + 0x6d59a3) = 0; // force device reset
 		}
 	}
 
 	void saveslot(int slot)
 	{
 		// create quick save data
-		((void(*)())(base + 0x4846F0))();
+		((void (*)())(base + 0x483db0))();
 		// save quick save data
-		((void(*)(const char *savedata, int size, const char *filename))(base + 0x475670))(*(char**)(base + 0x6D7E48), 16384, strprintf("lm_%.2x.sav", slot).data());
+		((void (*)(const char *savedata, int size, const char *filename))(base + 0x4752a0))(*(char**)(base + 0x6d5a38), 16384, strprintf("lm_%.2x.sav", slot).data());
 	}
 
 	void loadslot(int slot)
 	{
-		static char fakeloadmenu[512];
-		*(int*)(fakeloadmenu + 0x108) = 1;
-		*(short*)(fakeloadmenu + 0xf4) = slot / 5;
-		*(short*)(fakeloadmenu + 0xe0) = slot % 5;
+		static object fakeloadmenu;
+		fakeloadmenu.private_int[10] = 1;
+		fakeloadmenu.private_int[5] = slot / 5;
+		fakeloadmenu.private_int[0] = slot % 5;
 		kill_objects(); // clears objects
-		((void(*)(void*))(base + 0x44A960))(fakeloadmenu); // loads save, intended to be called from menu code but it only references these three fields
+		((void (*)(object*))(base + 0x44aa30))(&fakeloadmenu); // loads save, intended to be called from menu code but it only references these three fields 
 	}
 
 	vararray<hitbox> gethitboxes(int type)
 	{
 		static const struct { off_t ptr_offset, count_offset; } hitbox_ptrs[] =
 		{
-			{ 0x6D785C, 0x6D7168 },
-			{ 0x6D7248, 0x6D718C },
-			{ 0x6D78E8, 0x6D7348 },
-			{ 0x6D7E70, 0x6D6F70 },
-			{ 0x6D78F8, 0x6D6FC4 },
-			{ 0x6D7164, 0x6D739C },
-			{ 0x6D7894, 0x6D73A0 },
-			{ 0x6D7E78, 0x6D726C },
-			{ 0x6D72E4, 0x6D7C08 },
-			{ 0x6D7398, 0x6D7270 },
-			{ 0x6D7A1C, 0x6D7E74 },
-			{ 0x6D734C, 0x6D78EC }, // this one's definitely always empty but including it in the list anyway for now
-			{ 0x6D7188, 0x6D7A0C },
+			{ 0x6d5654, 0x6d4f60 },
+			{ 0x6d5040, 0x6d4f84 },
+			{ 0x6d56e0, 0x6d5140 },
+			{ 0x6d5a60, 0x6d4d68 },
+			{ 0x6d56f0, 0x6d4dbc },
+			{ 0x6d4f5c, 0x6d5194 },
+			{ 0x6d568c, 0x6d5198 },
+			{ 0x6d5a68, 0x6d5064 },
+			{ 0x6d50dc, 0x6d5a00 },
+			{ 0x6d5190, 0x6d5068 },
+			{ 0x6d5814, 0x6d5a64 },
+			{ 0x6d5144, 0x6d56e4 }, // this one's definitely always empty but including it in the list anyway for now
+			{ 0x6d4f80, 0x6d5804 },
 		};
 		return vararray<hitbox>(*(hitbox**)(base + hitbox_ptrs[type].ptr_offset), *(int*)(base + hitbox_ptrs[type].count_offset));
 	}
@@ -344,7 +346,7 @@ public:
 
 	void loadgfx(const char *filename, texture *tex)
 	{
-		auto loadgfx_ = (void(*)())(base + 0x458E00);
+		auto loadgfx_ = (void (*)())(base + 0x458e30);
 		__asm {
 			mov eax, loadgfx_;
 			mov ecx, filename;

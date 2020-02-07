@@ -1,41 +1,33 @@
 Virtual addresses include the default image base of 0x400000
 
-File	Virtual
-000168			Checksum.  This is definitely wrong, I don't even remember patching it
-0001b4			Relocation table size
-000210			.text virtual size
-000238			.rdata virtual size
-000260			.data virtual size
-0002b0			.reloc virtual size
-0536b9	004542b9	read_keys: Replace kb_enabled check with call to TASOnFrame
-0536d0	004542d0	read_keys: nop out more kb_enabled code
-0536e8	004542e8	read_keys: Change GetKeyState call to TASGetKeyState
-05375d	0045435d	read_keys: nop out loop that I think was never used anyway but would be problematic now
-0a4c09	004a5809	Wrap call to... composition function pointer? In any case the last function that performs any drawing in a frame with TASRender
-0d8ff3	004d9bf3	Change call to sleep function pointer to a wrapper
-0d9038	004d9c38	Change call to sleep function pointer to a wrapper
-0d9544	004da144	window_deactivated: noped mov byte_DB9343, 0 (background pausing effect)
-0d9569	004da169	window_deactivated: noped mov byte_6D4707, 0 (background input?)
-0d95cc	004da1cc	Ignore window minimising
-0d961c	004da21c	Don't pause on window losing focus
-0d988e	004da48e	Change call to an early initialisation function to a wrapper
-0fe070	004fec70	black screen transition calculation
-			Checks for 500ms of real time using a global (so two instances gives us screen mashing), replaced timeGetTime calls
-2abecb	006acacb	TAS init wrapper
-2abf54	006acb54	sleep wrapper
-2bf7b8	006c07b8	save dir => tsav (saving and load)
-2bf7fc	006c07fc	time attack record dir => tasrec
-2bf844	006c0844	save and record dir names (CreateDirectory)
-2bf920	006c0920	save dir => tsav (scanning)
-2ce142	006cf142	Strings for loading the DLL functions
-340bb0			Additions to relocation table
-N/A	00dbb4c0	LaMulanaTas.dll handle
-N/A	00dbb4c4	TASInit
-N/A	00dbb4c8	TASGetKeyState
-N/A	00dbb4cc	TasOnFrame
-N/A	00dbb4d0	TASRender
-N/A	00dbb4d4	sleep delta (-16 to not sleep)
-N/A	00dbb4d8	TASTime
+Offset	RVA
+0001b4		Relocation table size
+000210		.text virtual size
+000238		.rdata virtual size
+000260		.data virtual size
+0002b0		.reloc virtual size
+
+053710	454310	read_keys: nop out kb_enabled check
+053728	454328	read_keys: Change GetKeyState call to TasGetKeyState
+05379d	45439d	read_keys: nop out pointless loop to simplify things for me
+0a4119	4a4d19	compose_and_present: wrap call to function which composes the final output (mask etc.) with TasRender
+0d8660	4d9260	game_main: Change call to sleep function pointer to a wrapper
+0d86a5	4d92a5	game_main: Change call to sleep function pointer to a wrapper
+0d8c49	4d9849	window_deactivated: disable background pausing
+0d8ce3	4d98e3	winproc: Don't pause or losing focus or minimising
+0d8f4e	4d9b4e	WinMain: call load_tas instead of start_main_thread
+0fd570	4fe170	black screen transition calculation
+		Checks for 500ms of real time using a global (so two instances gives us screen mashing), replace 				all timeGetTime calls with TasTime
+26e5d3	66f1d3	read_pads: Replace unused counter increment with TasIncFrame call
+2aa61b	6ab21b	load_tas: wraps WinMain
+2cc7d6	6cdfd6	L"LaMulanaTAS" (LoadLibraryW)
+	db9060	TasInit
+	db9064	TasGetKeyState
+	db9068	TasIncFrame
+	db906c	TasRender
+	db9070	TasTime
+	db9074	TasSleep
+33f1dc		Additions to relocation table
 
 Known bugs that affect TASing:
 Tai Sui's eyes reference the member at offset E8 in Tai Sui on creation... which is before Tai Sui initialises this member so they get the value from whatever last occupied that memory and set it.

@@ -1,6 +1,6 @@
 # Installation
 
-Pending creation of an installer, copy LaMulanaTAS.dll to your 1.3.3.1 installation directory, for instance `C:\GOG Games\La-Mulana`, and apply TAS.bps to LaMulanaWin.exe to create a LaMulanaTAS.exe using Floating IPS.  You can acquire Floating IPS from SMW Central or try to build the source from https://github.com/Alcaro/Flips (quite the adventure).
+Pending creation of an installer, copy LaMulanaTAS.dll to your 1.0.0.1 installation directory, for instance `C:\GOG Games\La-Mulana`, and apply TAS.bps to LaMulanaWin.exe to create a LaMulanaTAS.exe using Floating IPS.  You can acquire Floating IPS from SMW Central or try to build the source from https://github.com/Alcaro/Flips (quite the adventure).
 
 # Use
 

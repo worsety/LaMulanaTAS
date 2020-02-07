@@ -23,6 +23,8 @@
 #include "d3d9.h"
 #include "atlbase.h"
 
+HMODULE tasModule;
+
 std::vector<std::pair<int, unsigned char>> LaMulanaMemory::objfixup::data_f;
 void(*LaMulanaMemory::objfixup::orig_create_f)(object*);
 
@@ -43,6 +45,7 @@ up,right,down,left
 jump,main,sub,item
 +m,-m,+s,-s
 ok,cancel
+ok2,ok3,cancel2,cancel3
 esc,f1-f9
 */
 
@@ -83,7 +86,7 @@ public:
 		}
 	}
 
-	bool running, resetting, has_reset;
+	bool running, resetting, has_reset, ff;
 	bool hide_game, show_overlay, show_exits, show_solids, show_loc;
 	int show_tiles;
 	unsigned show_hitboxes;
@@ -115,6 +118,10 @@ curdev(nullptr)
 	name2vk["-s"] = 'W';
 	name2vk["ok"] = 'Z';
 	name2vk["cancel"] = 'X';
+	name2vk["ok2"] = VK_SPACE;
+	name2vk["ok3"] = VK_RETURN;
+	name2vk["cancel2"] = VK_BACK;
+	name2vk["cancel3"] = VK_ESCAPE;
 	name2vk["f1"] = VK_F1;
 	name2vk["f2"] = VK_F2;
 	name2vk["f3"] = VK_F3;
@@ -141,12 +148,11 @@ public:
 void TAS::LoadTAS()
 {
 	std::ifstream f;
-	try {
-		f.open("script.txt", std::ios::in | std::ios::binary);
-	}
-	catch (std::exception&)
+	f.exceptions(std::ifstream::badbit);
+	f.open("script.txt", std::ios::in | std::ios::binary);
+	if (f.fail())
 	{
-		MessageBox(nullptr, L"Couldn't load script.txt", L"TAS error", MB_OK);
+		//MessageBox(nullptr, L"Couldn't load script.txt", L"TAS error", MB_OK);
 		return;
 	}
 
@@ -286,12 +292,12 @@ void TAS::LoadTAS()
 					int seed = m[1].length() ? std::stoi(m[2]) : -1;
 					int stepcount = m[3].length() ? std::stoi(m[3]) : 0;
 					frame_actions.find(curframe)->second.push_back([this, seed, stepcount]() {
-						int rng = seed >= 0 ? seed : memory.RNG, steps = stepcount;
+						int rng = seed >= 0 ? seed : memory.rng, steps = stepcount;
 						for (; steps > 0; --steps)
 							rng = rng * 109 + 1021 & 0x7fff;
 						for (; steps < 0; ++steps)
 							rng = (rng + 31747) * 2405 & 0x7fff;
-						memory.RNG = rng;
+						memory.rng = rng;
 						currng = -1;
 					});
 					continue;
@@ -399,13 +405,13 @@ void TAS::IncFrame()
 		if (keys['P'].pressed)
 		{
 			running = true;
-			memory.setspeed(0);
+			ff = true;
 			memory.setvsync(false);
 		}
 		if (keys[VK_OEM_4].pressed)
 		{
 			running = true;
-			memory.setspeed(16);
+			ff = false;
 		}
 		if (keys['R'].pressed)
 			LoadTAS();
@@ -437,7 +443,7 @@ void TAS::IncFrame()
 	}
 	if (currng < 0)
 	{
-		currng = memory.RNG;
+		currng = memory.rng;
 		rngsteps = 0;
 	}
 }
@@ -528,8 +534,8 @@ void TAS::Overlay()
 				//font4x6->Add(hitbox.x + hitbox.w, hitbox.y + hitbox.h, BMFALIGN_TOP | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 0, 255, 255), strprintf("%d", object.state));
 				if (memory.mother5_create == object.create)
 				{
-					font4x6->Add(hitbox.x, hitbox.y + hitbox.h + 6.f, BMFALIGN_TOP | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%d", *(int*)&object.unk_locals[0x24]));
-					font4x6->Add(hitbox.x + hitbox.w, hitbox.y + hitbox.h + 6.f, BMFALIGN_TOP | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%d", *(int*)&object.unk_locals[0x8]));
+					font4x6->Add(hitbox.x, hitbox.y + hitbox.h + 6.f, BMFALIGN_TOP | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%d", object.private_int[9]));
+					font4x6->Add(hitbox.x + hitbox.w, hitbox.y + hitbox.h + 6.f, BMFALIGN_TOP | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%d", object.private_int[2]));
 				}
 				break;
 			case 1:
@@ -546,7 +552,7 @@ void TAS::Overlay()
 			}
 			if (has_iframes)
 				font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255),
-					strprintf("%d %d", *(int*)&hitbox.object->unk_locals[4], *(int*)&hitbox.object->unk_locals[8]));
+					strprintf("%d %d", hitbox.object->private_int[1], hitbox.object->private_int[2]));
 			for (int vert = 0; vert < 6; vert++, i++)
 			{
 				int right = vert >= 1 && vert <= 3;
@@ -770,10 +776,10 @@ void TAS::Overlay()
 		};
 		for (auto input : inputs)
 			text += KeyPressed(name2vk[input.name]) ? input.disp : input.blank;
-		if ((unsigned)memory.RNG < 32768)
-			for (; currng != memory.RNG; rngsteps++)
+		if ((unsigned)memory.rng < 32768)
+			for (; currng != memory.rng; rngsteps++)
 				currng = currng * 109 + 1021 & 0x7fff;
-		text += strprintf("\n\nRNG [%.6d] %5d", rngsteps, memory.RNG);
+		text += strprintf("\n\nRNG [%.6d] %5d", rngsteps, memory.rng);
 		font8x12->Add(630, 470, BMFALIGN_BOTTOM | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
 		font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
 		D3D9CHECKED(oldstate->Apply());
@@ -807,36 +813,51 @@ void TAS::Overlay()
 
 TAS *tas = nullptr;
 
-void __fastcall TASInit(char *base)
+void __stdcall TasInit(int apiver)
 {
-	tas = new TAS(base);
+	if (apiver != 1)
+		ExitProcess(1);
+	tas = new TAS((char*)GetModuleHandle(nullptr) - 0x400000);
 }
 
-SHORT WINAPI TASGetKeyState(_In_ int nVirtKey)
+SHORT _stdcall TasGetKeyState(int nVirtKey)
 {
 	return tas->KeyPressed(nVirtKey) ? 0x8000 : 0;
 }
 
-DWORD WINAPI TASOnFrame(void)
+DWORD __stdcall TasIncFrame(void)
 {
 	tas->IncFrame();
 	return timeGetTime();
 }
 
-void TASRender(void)
+void TasRender(void)
 {
 	tas->Overlay();
 }
 
-DWORD __stdcall TASTime(void)
+DWORD __stdcall TasTime(void)
 {
 	return tas->frame_count * 17;
 }
 
-HMODULE tasModule;
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
+void TasSleep(int duration)
 {
+	if (!tas->ff)
+		(*tas->memory.sleep)(duration);
+}
+
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
+{
+	if (reason != DLL_PROCESS_ATTACH)
+		return TRUE;
 	tasModule = hModule;
+	char *rva0 = (char*)GetModuleHandle(nullptr) - 0x400000;
+	*(void**)(rva0 + 0xdb9060) = TasInit;
+	*(void**)(rva0 + 0xdb9064) = TasGetKeyState;
+	*(void**)(rva0 + 0xdb9068) = TasIncFrame;
+	*(void**)(rva0 + 0xdb906c) = TasRender;
+	*(void**)(rva0 + 0xdb9070) = TasTime;
+	*(void**)(rva0 + 0xdb9074) = TasSleep;
 	return TRUE;
 }
