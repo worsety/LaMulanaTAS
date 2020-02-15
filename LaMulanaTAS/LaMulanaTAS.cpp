@@ -427,7 +427,7 @@ void TAS::IncFrame()
 			frame_count = 0;
 			running = resetting = true;
 		}
-	} while (!running && memory.game_state != 5);
+	} while (!running && memory.game_state != 5 && (Sleep(1), 1));
 
 	frame++;
 	auto iter = frame_actions.find(frame);
