@@ -78,6 +78,8 @@ public:
 
 	void UpdateKeys()
 	{
+		if (!memory.kb_enabled)
+			return;
 		// there's a very efficient way to do this with an xor but whatever, legibility
 		for (int vk = 0; vk < 256; vk++)
 		{
@@ -88,7 +90,7 @@ public:
 		}
 	}
 
-	bool running = true, resetting, has_reset, ff;
+	bool run = true, pause, resetting, has_reset, ff;
 	bool scripting = true, kbpassthrough = true;
 	bool show_overlay = true, show_exits, show_solids, show_loc, hide_game;
 	int show_tiles;
@@ -98,6 +100,8 @@ public:
 	bool KeyPressed(int vk);
 	void IncFrame();
 	void Overlay();
+	void DrawOverlay();
+	void ProcessKeys();
 
 	void LoadTAS();
 };
@@ -336,7 +340,7 @@ void TAS::LoadTAS()
 				if ("pause" == token)
 				{
 					frame_actions.emplace(curframe, std::list<std::function<void()>>());
-					frame_actions.find(curframe)->second.push_back([this]() { running = false; });
+					frame_actions.find(curframe)->second.push_back([this]() { pause = true; });
 					continue;
 				}
 				throw parsing_exception(strprintf("Unrecognised expression '%s' on line %d", token.data(), linenum));
@@ -374,60 +378,56 @@ static const struct {
 	{ '0', '0', 12 },
 };
 
+void TAS::ProcessKeys()
+{
+	if (keys[VK_OEM_6].pressed)
+	{
+		if (pause)
+			run = true;
+		pause = true;
+	}
+	if (keys['O'].pressed)
+		show_overlay = !show_overlay;
+	if (keys['K'].pressed)
+		show_exits = !show_exits;
+	if (keys['L'].pressed)
+		show_loc = !show_loc;
+
+	for (auto &&k : hitboxkeys)
+		show_hitboxes ^= keys[k.vk].pressed << k.type;
+	if (keys[VK_OEM_MINUS].pressed)
+		show_solids = !show_solids;
+	if (keys[VK_OEM_PLUS].pressed)
+		show_tiles = (show_tiles + 1) % 3;
+	if (keys[VK_OEM_1].pressed)
+		hide_game = !hide_game;
+	if (keys['P'].pressed)
+	{
+		run = true, ff = true, pause = false;
+		memory.setvsync(false);
+	}
+	if (keys[VK_OEM_4].pressed)
+		run = true, ff = false, pause = false;
+	if (keys['R'].pressed)
+		LoadTAS();
+	if (keys['T'].pressed) {
+		has_reset = true;
+		LoadTAS();
+		memory.kill_objects();
+		memory.scrub_objects();
+		memory.reset_game();
+		memory.has_quicksave = 0;
+		memory.timeattack_cursor = -1;
+		frame = -2;
+		frame_count = 0;
+		run = resetting = true;
+	}
+}
+
 void TAS::IncFrame()
 {
-	do
-	{
-		if (GetForegroundWindow() != memory.window)
-			continue;
-		UpdateKeys();
-
-		if (keys[VK_OEM_6].pressed)
-		{
-			running = false;
-			break;
-		}
-		if (keys['O'].pressed)
-			show_overlay = !show_overlay;
-		if (keys['K'].pressed)
-			show_exits = !show_exits;
-		if (keys['L'].pressed)
-			show_loc = !show_loc;
-
-		for (auto &&k : hitboxkeys)
-			show_hitboxes ^= keys[k.vk].pressed << k.type;
-		if (keys[VK_OEM_MINUS].pressed)
-			show_solids = !show_solids;
-		if (keys[VK_OEM_PLUS].pressed)
-			show_tiles = (show_tiles + 1) % 3;
-		if (keys[VK_OEM_1].pressed)
-			hide_game = !hide_game;
-		if (keys['P'].pressed)
-		{
-			running = true;
-			ff = true;
-			memory.setvsync(false);
-		}
-		if (keys[VK_OEM_4].pressed)
-		{
-			running = true;
-			ff = false;
-		}
-		if (keys['R'].pressed)
-			LoadTAS();
-		if (keys['T'].pressed) {
-			has_reset = true;
-			LoadTAS();
-			memory.kill_objects();
-			memory.scrub_objects();
-			memory.reset_game();
-			memory.has_quicksave = 0;
-			memory.timeattack_cursor = -1;
-			frame = -2;
-			frame_count = 0;
-			running = resetting = true;
-		}
-	} while (!running && memory.game_state != 5 && (Sleep(1), 1));
+	UpdateKeys();
+	ProcessKeys();
 
 	frame++;
 	auto iter = frame_actions.find(frame);
@@ -446,6 +446,8 @@ void TAS::IncFrame()
 		currng = memory.rng;
 		rngsteps = 0;
 	}
+	if (pause)
+		run = false;
 }
 
 static const RECT unscaled_game{ 0, 0, 640, 480 };
@@ -455,6 +457,41 @@ void TAS::Overlay()
 	if (memory.game_state < 4)
 		return;
 
+	int target_time = timeGetTime();
+
+	DrawOverlay();
+	if (!run) {
+		IDirect3DDevice9 *dev = memory.id3d9dev();
+		CComPtr<IDirect3DSurface9> window_surface;
+		RECT display_rect{
+			(LONG)memory.game_horz_offset,
+			(LONG)memory.game_vert_offset,
+			(LONG)(memory.game_horz_offset + memory.game_horz_scale * memory.game_width),
+			(LONG)(memory.game_vert_offset + memory.game_vert_scale * memory.game_height),
+		};
+		while (!run && memory.game_state != 5) {
+			D3D9CHECKED(dev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &window_surface));
+			D3D9CHECKED(dev->StretchRect(overlay_surf, &unscaled_game, window_surface, &display_rect, D3DTEXF_LINEAR));
+			D3D9CHECKED(dev->EndScene());
+			D3D9CHECKED(dev->Present(nullptr, nullptr, nullptr, nullptr));
+			window_surface = 0;
+			// definitely not how to achieve a steady 60 fps but that's not critical here
+			target_time += 16;
+			int sleep_time = target_time - timeGetTime();
+			if (sleep_time > 0)
+				Sleep(sleep_time);
+			UpdateKeys();
+			ProcessKeys();
+			D3D9CHECKED(dev->BeginScene());
+			DrawOverlay();
+		}
+	}
+
+	memory.postprocessed_gamesurf = overlay_surf;
+}
+
+void TAS::DrawOverlay()
+{
 	IDirect3DDevice9 *dev = memory.id3d9dev();
 	if (curdev != dev)
 	{
@@ -821,8 +858,6 @@ void TAS::Overlay()
 			D3D9CHECKED(oldstate->Apply());
 		}
 	}
-
-	memory.postprocessed_gamesurf = overlay_surf;
 }
 
 TAS *tas = nullptr;
