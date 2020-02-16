@@ -386,31 +386,16 @@ void TAS::ProcessKeys()
 			run = true;
 		pause = true;
 	}
-	if (keys['O'].pressed)
-		show_overlay = !show_overlay;
-	if (keys['K'].pressed)
-		show_exits = !show_exits;
-	if (keys['L'].pressed)
-		show_loc = !show_loc;
-
-	for (auto &&k : hitboxkeys)
-		show_hitboxes ^= keys[k.vk].pressed << k.type;
-	if (keys[VK_OEM_MINUS].pressed)
-		show_solids = !show_solids;
-	if (keys[VK_OEM_PLUS].pressed)
-		show_tiles = (show_tiles + 1) % 3;
-	if (keys[VK_OEM_1].pressed)
-		hide_game = !hide_game;
+	if (keys[VK_OEM_4].pressed)
+		run = true, ff = false, pause = false;
 	if (keys['P'].pressed)
 	{
 		run = true, ff = true, pause = false;
 		memory.setvsync(false);
 	}
-	if (keys[VK_OEM_4].pressed)
-		run = true, ff = false, pause = false;
-	if (keys['R'].pressed)
-		LoadTAS();
-	if (keys['T'].pressed) {
+	if (keys['O'].pressed)
+		show_overlay = !show_overlay;
+	if (keys['I'].pressed) {
 		has_reset = true;
 		LoadTAS();
 		memory.kill_objects();
@@ -421,6 +406,24 @@ void TAS::ProcessKeys()
 		frame = -2;
 		frame_count = 0;
 		run = resetting = true;
+	}
+	if (keys['U'].pressed)
+		LoadTAS();
+
+	if (keys[VK_MENU].held)
+	{
+		for (auto &&k : hitboxkeys)
+			show_hitboxes ^= keys[k.vk].pressed << k.type;
+		if (keys[VK_OEM_MINUS].pressed)
+			show_solids = !show_solids;
+		if (keys[VK_OEM_PLUS].pressed)
+			show_tiles = (show_tiles + 1) % 3;
+		if (keys['E'].pressed)
+			show_exits = !show_exits;
+		if (keys['L'].pressed)
+			show_loc = !show_loc;
+		if (keys['G'].pressed)
+			hide_game = !hide_game;
 	}
 }
 

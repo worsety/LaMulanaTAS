@@ -25,12 +25,15 @@ Saves and time attack records go to the `tsav` and `tasrec` directories alongsid
 
 Key | Action
 :---:|:---
-R | Reload script in place
-T | Reset game (imperfect) and restart TAS script from beginning
+U | Update loaded script from disk
+I | Reinitialise game (imperfect), reload script and restart from the first frame
 O | Toggle main overlay
 P | Fast forward (also disables vsync for the rest of the session)
 [ | Normal speed
 ] | Frame advance
+
+Alt+Key | Action
+:---:|:---
 1 | Toggle Lemeza's hurtbox
 2 | Toggle Lemeza's weapon hitboxes
 3 | Toggle Lemeza's shield hurtbox
@@ -43,9 +46,9 @@ P | Fast forward (also disables vsync for the rest of the session)
 0 | Toggle item hitboxes
 \- | Toggle dynamic collision boxes (separate system from hitboxes)
 = | Toggle tile collision data
-K | Toggle screen exit display
+E | Toggle screen exit display
 L | Toggle visual indication of Lemeza's location
-; | Toggle visibility of game graphics
+G | Toggle visibility of game graphics
 
 # Scripting
 
