@@ -41,7 +41,7 @@ P | Fast forward (also disables vsync for the rest of the session)
 8 | Toggle omnidirectional scaling damage source hitboxes
 9 | Toggle unidirectional scaling damage source hitboxes
 0 | Toggle item hitboxes
-- | Toggle dynamic collision boxes (separate system from hitboxes)
+\- | Toggle dynamic collision boxes (separate system from hitboxes)
 = | Toggle tile collision data
 K | Toggle screen exit display
 L | Toggle visual indication of Lemeza's location
