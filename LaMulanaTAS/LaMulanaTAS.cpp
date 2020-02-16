@@ -88,10 +88,11 @@ public:
 		}
 	}
 
-	bool running, resetting, has_reset, ff;
-	bool hide_game, show_overlay, show_exits, show_solids, show_loc;
+	bool running = true, resetting, has_reset, ff;
+	bool scripting = true, kbpassthrough = true;
+	bool show_overlay = true, show_exits, show_solids, show_loc, hide_game;
 	int show_tiles;
-	unsigned show_hitboxes;
+	unsigned show_hitboxes = 1 << 7 | 1 << 9 | 1 << 11;  // unknown types, I want to know if anyone sees them
 
 	TAS(char *base);
 	bool KeyPressed(int vk);
@@ -101,10 +102,7 @@ public:
 	void LoadTAS();
 };
 
-TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0), running(true), has_reset(false),
-hide_game(false), show_overlay(true), show_exits(false), show_solids(false), show_loc(false), show_tiles(0),
-show_hitboxes(1 << 7 | 1 << 9 | 1 << 11),
-curdev(nullptr)
+TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
 {
 	name2vk["up"] = VK_UP;
 	name2vk["right"] = VK_RIGHT;
@@ -356,8 +354,8 @@ bool TAS::KeyPressed(int vk)
 	if (resetting)
 		return false;
 	auto iter = --frame_inputs.upper_bound(frame);
-	return frame_inputs.end() != iter && 0 != iter->second.count(vk)
-		|| memory.kb_enabled && !!(GetKeyState(vk) & 0x8000);
+	return (scripting && frame_inputs.end() != iter && 0 != iter->second.count(vk))
+		|| (kbpassthrough && memory.kb_enabled && keys[vk].held);
 }
 
 static const struct {
@@ -402,7 +400,7 @@ void TAS::IncFrame()
 			show_solids = !show_solids;
 		if (keys[VK_OEM_PLUS].pressed)
 			show_tiles = (show_tiles + 1) % 3;
-		if (keys[VK_BACK].pressed)
+		if (keys[VK_OEM_1].pressed)
 			hide_game = !hide_game;
 		if (keys['P'].pressed)
 		{
@@ -450,10 +448,10 @@ void TAS::IncFrame()
 	}
 }
 
+static const RECT unscaled_game{ 0, 0, 640, 480 };
+
 void TAS::Overlay()
 {
-	static RECT unscaled_game {0, 0, 640, 480};
-
 	if (memory.game_state < 4)
 		return;
 
@@ -582,7 +580,7 @@ void TAS::Overlay()
 				case 0: // lemeza
 					hv[i].color = D3DCOLOR_ARGB(128, 0, 255, 0);
 					break;
-				case 3: // enemy hitbox
+				case 3: // enemy hurtbox
 					hv[i].color = D3DCOLOR_ARGB(64, 0, 255, 0);
 					break;
 				case 1: // lemeza's weapons
@@ -590,7 +588,7 @@ void TAS::Overlay()
 				case 10: // scaling damage, directional
 					hv[i].color = D3DCOLOR_ARGB(128, 255, 0, 0);
 					break;
-				case 4: // enemy hurtbox
+				case 4: // enemy hitbox
 					hv[i].color = D3DCOLOR_ARGB(64, 255, 0, 0);
 					break;
 				case 2: // lemeza's shield
