@@ -31,20 +31,21 @@ O | Toggle main overlay
 P | Fast forward (also disables vsync for the rest of the session)
 [ | Normal speed
 ] | Frame advance
-1 | Toggle Lemeza's hitbox
-2 | Toggle Lemeza's weapon hurtboxes
-3 | Toggle Lemeza's shield hitbox
-4 | Toggle enemy hitboxes
-5 | Toggle enemy hurtboxes
-6 | Toggle blockable projectile hurtboxes
-7 | Toggle enemy shield hitboxes
-8 | Toggle omnidirectional scaling damage source hurtboxes
-9 | Toggle unidirectional scaling damage source hurtboxes
+1 | Toggle Lemeza's hurtbox
+2 | Toggle Lemeza's weapon hitboxes
+3 | Toggle Lemeza's shield hurtbox
+4 | Toggle enemy hurtboxes
+5 | Toggle enemy hitboxes
+6 | Toggle blockable projectile hitboxes
+7 | Toggle enemy shield hurtboxes
+8 | Toggle omnidirectional scaling damage source hitboxes
+9 | Toggle unidirectional scaling damage source hitboxes
 0 | Toggle item hitboxes
 - | Toggle dynamic collision boxes (separate system from hitboxes)
 = | Toggle tile collision data
 K | Toggle screen exit display
 L | Toggle visual indication of Lemeza's location
+; | Toggle visibility of game graphics
 
 # Scripting
 
