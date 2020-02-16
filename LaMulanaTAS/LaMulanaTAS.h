@@ -7,9 +7,9 @@
 extern "C" {
 #endif
 	void __stdcall TasInit(int);
-	SHORT _stdcall TasGetKeyState(int nVirtKey);
-	DWORD _stdcall TasIncFrame(void);
-	void TasRender(void);
+	SHORT __stdcall TasGetKeyState(int nVirtKey);
+	DWORD __stdcall TasIncFrame(void);
+	int __stdcall TasRender(void);
 	DWORD __stdcall TasTime(void);
 	void TasSleep(int);
 #ifdef __cplusplus

@@ -170,6 +170,15 @@ public:
 	char &kb_enabled = *(base + 0x6d3618);
 	HWND &window = *(HWND*)(base + 0xdb4b68);
 	void (*&post_process)() = *(void (**)())(base + 0x6d6b64);
+	D3DFORMAT &display_format = *(D3DFORMAT*)(base + 0xdb4984);
+	IDirect3DSurface9 *&postprocessed_gamesurf = *(IDirect3DSurface9**)(base + 0x6d6b98);
+	float &game_horz_offset = *(float*)(base + 0xdb4994);
+	float &game_vert_offset = *(float*)(base + 0xdb4988);
+	float &game_horz_scale = *(float*)(base + 0x6d6b90);
+	float &game_vert_scale = *(float*)(base + 0x85d614);
+	// Always 640x480 but the game uses these so I will too
+	float &game_width = *(float*)(base + 0xdb4b24);
+	float &game_height = *(float*)(base + 0x6d6af8);
 
 	short &rng = *(short *)(base + 0x6d4a50);
 	int &game_state = *(int*)(base + 0xdb4b80);

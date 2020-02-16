@@ -62,7 +62,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>FOR %%f IN (TAS, saveanywhere) DO COPY /Y "$(ProjectDir)\%%f.bps" "$(SolutionDir)\dist\"</Command>
+      <Command>COPY /Y "$(ProjectDir)\TAS.bps" "$(SolutionDir)\dist\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

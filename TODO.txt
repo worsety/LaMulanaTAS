@@ -6,7 +6,6 @@ Future features:
     Something for damage boost direction? Got to understand exactly how that works first
 Enhancements:
     Display all types of errors in the game window.  Maybe use GDI drawing on the window's DC in IncFrame since that should be between a Present and a Sleep?
-    Change overlay hooking to be at 4a30f1 after all postprocessing but before the surface is blitted to the window
     Do my own loop including blitting to allow interactivity while the game is paused for frame advancing
     Support non-default key mappings
     Jump preview?

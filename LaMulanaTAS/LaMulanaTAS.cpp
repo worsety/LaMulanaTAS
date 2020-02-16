@@ -67,6 +67,8 @@ public:
 		CComPtr<IDirect3DTexture9> tex;
 		float texel_w, texel_h;
 	} hit_parts, hit_hex;
+	CComPtr<IDirect3DTexture9> overlay;
+	CComPtr<IDirect3DSurface9> overlay_surf;
 
 	struct keystate {
 		unsigned char held : 1;
@@ -450,17 +452,31 @@ void TAS::IncFrame()
 
 void TAS::Overlay()
 {
+	static RECT unscaled_game {0, 0, 640, 480};
+
+	if (memory.game_state < 4)
+		return;
+
 	IDirect3DDevice9 *dev = memory.id3d9dev();
 	if (curdev != dev)
 	{
 		font4x6.reset();
 		font8x12.reset();
 		hit_parts.tex.p = hit_hex.tex.p = 0;
+		overlay = nullptr, overlay_surf = nullptr;
 		curdev = dev;
 	}
 
+	if (!overlay) {
+		D3D9CHECKED(dev->CreateTexture(640, 480, 1, D3DUSAGE_RENDERTARGET, memory.display_format, D3DPOOL_DEFAULT, &overlay, nullptr));
+		D3D9CHECKED(overlay->GetSurfaceLevel(0, &overlay_surf));
+	}
+
+	D3D9CHECKED(dev->SetRenderTarget(0, overlay_surf));
 	if (hide_game)
-		D3D9CHECKED(dev->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 0.f, 0));
+		D3D9CHECKED(dev->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(255, 0, 0, 0), 0.f, 0));
+	else
+		D3D9CHECKED(dev->StretchRect(memory.postprocessed_gamesurf, &unscaled_game, overlay_surf, &unscaled_game, D3DTEXF_POINT));
 
 	CComPtr<IDirect3DStateBlock9> oldstate;
 	D3D9CHECKED(dev->CreateStateBlock(D3DSBT_ALL, &oldstate));
@@ -808,19 +824,19 @@ void TAS::Overlay()
 		}
 	}
 
-	memory.post_process();
+	memory.postprocessed_gamesurf = overlay_surf;
 }
 
 TAS *tas = nullptr;
 
 void __stdcall TasInit(int apiver)
 {
-	if (apiver != 1)
+	if (apiver != 2)
 		ExitProcess(1);
 	tas = new TAS((char*)GetModuleHandle(nullptr) - 0x400000);
 }
 
-SHORT _stdcall TasGetKeyState(int nVirtKey)
+SHORT __stdcall TasGetKeyState(int nVirtKey)
 {
 	return tas->KeyPressed(nVirtKey) ? 0x8000 : 0;
 }
@@ -831,9 +847,10 @@ DWORD __stdcall TasIncFrame(void)
 	return timeGetTime();
 }
 
-void TasRender(void)
+int __stdcall TasRender(void)
 {
 	tas->Overlay();
+	return (int)tas->memory.game_horz_offset;
 }
 
 DWORD __stdcall TasTime(void)

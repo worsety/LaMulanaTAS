@@ -10,7 +10,7 @@ Offset	RVA
 053710	454310	read_keys: nop out kb_enabled check
 053728	454328	read_keys: Change GetKeyState call to TasGetKeyState
 05379d	45439d	read_keys: nop out pointless loop to simplify things for me
-0a4119	4a4d19	compose_and_present: wrap call to function which composes the final output (mask etc.) with TasRender
+0a24f1	4a30f1	post_process_mono: replace conversion of a float to an int with a TasRender call
 0d8660	4d9260	game_main: Change call to sleep function pointer to a wrapper
 0d86a5	4d92a5	game_main: Change call to sleep function pointer to a wrapper
 0d8c49	4d9849	window_deactivated: disable background pausing
