@@ -17,9 +17,7 @@ For TASing it can be important to know the order of operations in a frame (e.g. 
 5. Post-collision logic
 6. Sleep
 
-The intersections of the lines on Lemeza shown with L are the points tested for tile collision.  Notably dynamic collision boxes test again the middle of Lemeza, not his left or right.  It hasn't been verified that this line is the actual coordinate tested for dynamic collision boxes, all the offsets are from the function for tile collision.
-
-Saves and time attack records go to the `tsav` and `tasrec` directories alongside the `save` and `record` for the unmodded game.
+The intersections of the lines on Lemeza shown with Alt+L are the points tested for tile collision.  Notably dynamic collision boxes test again the middle of Lemeza, not his left or right.  It hasn't been verified that this line is the actual coordinate tested for dynamic collision boxes, all the offsets are from the function for tile collision.
 
 ## Key bindings (not configurable):
 
