@@ -13,11 +13,15 @@ Offset	RVA
 0a24f1	4a30f1	post_process_mono: replace conversion of a float to an int with a TasRender call
 0d8660	4d9260	game_main: Change call to sleep function pointer to a wrapper
 0d86a5	4d92a5	game_main: Change call to sleep function pointer to a wrapper
-0d8c49	4d9849	window_deactivated: disable background pausing
+0d8c24	4d9824	window_deactivated: remove pad input disabling
+0d8c49	4d9849	window_deactivated: remove background pausing
 0d8ce3	4d98e3	winproc: Don't pause or losing focus or minimising
+0d8d5b	4d995b	winproc: Write to winproc_inputdev instead of cur_inputdev
 0d8f4e	4d9b4e	WinMain: call load_tas instead of start_main_thread
 0fd570	4fe170	black screen transition calculation
-		Checks for 500ms of real time using a global (so two instances gives us screen mashing), replace 				all timeGetTime calls with TasTime
+		Checks for 500ms of real time using a global (so two instances gives us screen mashing), replace all timeGetTime calls with TasTime
+168fef	569bef	poll_pads: Call XInputGetState wrapper
+169005	569c05	poll_pads: Disable vibration on our fake pad
 26e5d3	66f1d3	read_pads: Replace unused counter increment with TasIncFrame call
 2aa61b	6ab21b	load_tas: wraps WinMain
 2cc7d6	6cdfd6	L"LaMulanaTAS" (LoadLibraryW)
@@ -27,6 +31,8 @@ Offset	RVA
 	db906c	TasRender
 	db9070	TasTime
 	db9074	TasSleep
+	db9078	TasXInputGetState
+	db907c	winproc_inputdev
 33f1dc		Additions to relocation table
 
 Known bugs that affect TASing:

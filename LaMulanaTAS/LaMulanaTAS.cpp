@@ -22,6 +22,7 @@
 #endif
 #include "d3d9.h"
 #include "atlbase.h"
+#include "xinput.h"
 
 HMODULE tasModule;
 
@@ -49,6 +50,47 @@ ok2,ok3,cancel2,cancel3
 esc,f1-f9
 */
 
+enum
+{
+	PAD_BTN = 0x100,
+	PAD_START = PAD_BTN,
+	PAD_SELECT,
+	PAD_L3,
+	PAD_R3,
+	PAD_L1,
+	PAD_R1,
+	PAD_A,
+	PAD_B,
+	PAD_X,
+	PAD_Y,
+	PAD_L2,
+	PAD_R2,
+	PAD_UP = 0x180,
+	PAD_DOWN,
+	PAD_LEFT,
+	PAD_RIGHT,
+};
+
+static const WORD XINPUT_BTN[] = {
+	XINPUT_GAMEPAD_START,
+	XINPUT_GAMEPAD_BACK,
+	XINPUT_GAMEPAD_LEFT_THUMB,
+	XINPUT_GAMEPAD_RIGHT_THUMB,
+	XINPUT_GAMEPAD_LEFT_SHOULDER,
+	XINPUT_GAMEPAD_RIGHT_SHOULDER,
+	XINPUT_GAMEPAD_A,
+	XINPUT_GAMEPAD_B,
+	XINPUT_GAMEPAD_X,
+	XINPUT_GAMEPAD_Y,
+};
+
+static const WORD XINPUT_DPAD[] = {
+	XINPUT_GAMEPAD_DPAD_UP,
+	XINPUT_GAMEPAD_DPAD_DOWN,
+	XINPUT_GAMEPAD_DPAD_LEFT,
+	XINPUT_GAMEPAD_DPAD_RIGHT,
+};
+
 class TAS
 {
 public:
@@ -57,6 +99,7 @@ public:
 	std::map<int, std::string> sections;
 	std::map<int, std::unordered_set<int>> frame_inputs;
 	std::map<int, std::list<std::function<void()>>> frame_actions;
+	std::unordered_set<int> cur_frame_inputs;
 	std::vector<LaMulanaMemory::objfixup> objfixups;
 	short currng = -1;
 	using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
@@ -91,13 +134,14 @@ public:
 	}
 
 	bool run = true, pause, resetting, has_reset, ff;
-	bool scripting = true, kbpassthrough = true;
+	bool scripting = true, passthrough = true;
 	bool show_overlay = true, show_exits, show_solids, show_loc, hide_game;
 	int show_tiles;
 	unsigned show_hitboxes = 1 << 7 | 1 << 9 | 1 << 11;  // unknown types, I want to know if anyone sees them
 
 	TAS(char *base);
 	bool KeyPressed(int vk);
+	DWORD GetXInput(DWORD idx, XINPUT_STATE *state);
 	void IncFrame();
 	void Overlay();
 	void DrawOverlay();
@@ -120,13 +164,16 @@ TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
 	name2vk["-m"] = 'Q';
 	name2vk["+s"] = 'S';
 	name2vk["-s"] = 'W';
+	name2vk["+menu"] = VK_TAB;
+	name2vk["-menu"] = VK_CONTROL;
 	name2vk["ok"] = 'Z';
 	name2vk["cancel"] = 'X';
+	name2vk["msx"] = VK_ESCAPE;
 	name2vk["ok2"] = VK_SPACE;
 	name2vk["ok3"] = VK_RETURN;
 	name2vk["cancel2"] = VK_BACK;
 	name2vk["cancel3"] = VK_ESCAPE;
-	name2vk["f1"] = VK_F1;
+	name2vk["pause"] = name2vk["f1"] = VK_F1;
 	name2vk["f2"] = VK_F2;
 	name2vk["f3"] = VK_F3;
 	name2vk["f4"] = VK_F4;
@@ -135,6 +182,24 @@ TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
 	name2vk["f7"] = VK_F7;
 	name2vk["f8"] = VK_F8;
 	name2vk["f9"] = VK_F9;
+	name2vk["p-up"] = PAD_UP;
+	name2vk["p-down"] = PAD_DOWN;
+	name2vk["p-left"] = PAD_LEFT;
+	name2vk["p-right"] = PAD_RIGHT;
+	name2vk["p-jump"] = PAD_A;
+	name2vk["p-main"] = PAD_X;
+	name2vk["p-sub"] = PAD_B;
+	name2vk["p-item"] = PAD_Y;
+	name2vk["p+m"] = PAD_R1;
+	name2vk["p-m"] = PAD_L1;
+	name2vk["p+s"] = PAD_R2;
+	name2vk["p-s"] = PAD_L2;
+	name2vk["p+menu"] = PAD_R1;
+	name2vk["p-menu"] = PAD_L1;
+	name2vk["p-ok"] = PAD_A;
+	name2vk["p-cancel"] = PAD_B;
+	name2vk["p-pause"] = PAD_SELECT;
+	name2vk["p-msx"] = PAD_START;
 	memset(keys, 0, sizeof keys);
 
 	LoadTAS();
@@ -337,7 +402,7 @@ void TAS::LoadTAS()
 						throw parsing_exception(strprintf("Unrecognised fixup type '%s' on line %d", m[1].str().data(), linenum));
 					continue;
 				}
-				if ("pause" == token)
+				if ("break" == token)
 				{
 					frame_actions.emplace(curframe, std::list<std::function<void()>>());
 					frame_actions.find(curframe)->second.push_back([this]() { pause = true; });
@@ -357,9 +422,36 @@ bool TAS::KeyPressed(int vk)
 {
 	if (resetting)
 		return false;
-	auto iter = --frame_inputs.upper_bound(frame);
-	return (scripting && frame_inputs.end() != iter && 0 != iter->second.count(vk))
-		|| (kbpassthrough && memory.kb_enabled && keys[vk].held);
+	return (scripting && 0 != cur_frame_inputs.count(vk))
+		|| (passthrough && memory.kb_enabled && keys[vk].held);
+}
+
+DWORD TAS::GetXInput(DWORD idx, XINPUT_STATE *state)
+{
+	DWORD ret = ERROR_DEVICE_NOT_CONNECTED;
+	if (passthrough)
+		ret = (*memory.XInputGetState)(idx, state);
+	if (ret != ERROR_SUCCESS)
+		memset(state, 0, sizeof *state);
+
+	if (scripting)
+	{
+		for (auto &&i : cur_frame_inputs)
+		{
+			if (i < 0x100)
+				continue;
+			ret = ERROR_SUCCESS;
+			if (i >= PAD_START && i <= PAD_Y)
+				state->Gamepad.wButtons |= XINPUT_BTN[i - PAD_START];
+			else if (i >= PAD_UP && i <= PAD_RIGHT)
+				state->Gamepad.wButtons |= XINPUT_DPAD[i - PAD_UP];
+			else if (i == PAD_L2)
+				state->Gamepad.bLeftTrigger = 255;
+			else if (i == PAD_R2)
+				state->Gamepad.bRightTrigger = 255;
+		}
+	}
+	return ret;
 }
 
 static const struct {
@@ -433,11 +525,16 @@ void TAS::IncFrame()
 	ProcessKeys();
 
 	frame++;
-	auto iter = frame_actions.find(frame);
-	if (iter != frame_actions.end())
-		for (auto x : iter->second)
+
+	auto action_iter = frame_actions.find(frame);
+	if (action_iter != frame_actions.end())
+		for (auto x : action_iter->second)
 			x();
-	// P toggles frame limiter
+
+	cur_frame_inputs.clear();
+	auto input_iter = --frame_inputs.upper_bound(frame);
+	if (frame_inputs.end() != input_iter)
+		cur_frame_inputs = input_iter->second;
 
 	if (frame >= 0)
 	{
@@ -451,6 +548,16 @@ void TAS::IncFrame()
 	}
 	if (pause)
 		run = false;
+
+	if (_InterlockedExchange(&memory.winproc_inputdev, 0) && passthrough)
+		memory.cur_inputdev = 4;
+	else if (scripting)
+		for (auto &&i : cur_frame_inputs)
+			if (i < 256)
+			{
+				memory.cur_inputdev = 4;
+				break;
+			}
 }
 
 static const RECT unscaled_game{ 0, 0, 640, 480 };
@@ -865,9 +972,9 @@ void TAS::DrawOverlay()
 
 TAS *tas = nullptr;
 
-void __stdcall TasInit(int apiver)
+void __stdcall TasInit(int patchver)
 {
-	if (apiver != 2)
+	if (patchver != 3)
 		ExitProcess(1);
 	tas = new TAS((char*)GetModuleHandle(nullptr) - 0x400000);
 }
@@ -875,6 +982,11 @@ void __stdcall TasInit(int apiver)
 SHORT __stdcall TasGetKeyState(int nVirtKey)
 {
 	return tas->KeyPressed(nVirtKey) ? 0x8000 : 0;
+}
+
+DWORD __stdcall TasXInputGetState(DWORD idx, XINPUT_STATE *state)
+{
+	return tas->GetXInput(idx, state);
 }
 
 DWORD __stdcall TasIncFrame(void)
@@ -912,5 +1024,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
 	*(void**)(rva0 + 0xdb906c) = TasRender;
 	*(void**)(rva0 + 0xdb9070) = TasTime;
 	*(void**)(rva0 + 0xdb9074) = TasSleep;
+	*(void**)(rva0 + 0xdb9078) = TasXInputGetState;
 	return TRUE;
 }

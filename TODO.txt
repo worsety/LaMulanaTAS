@@ -9,8 +9,5 @@ Enhancements:
     Support non-default key mappings
     Jump preview?
 Better uninitialised data hooking: afaics, every object is created through obj_add or obj_add_instantiate, so mod those to set obj->create to an imported function which does its own stuff then obj->create = obj->create2; / *always set to create, purpose unknown */ return obj->create();
-    Change input hooking code
-        Replace the read_keys kb_enabled check with a call to a tas dll function which overrides kb_enabled only if there is scripted keyboard input that frame
-        Replace curinputdev=4 in winproc for key events with a new global which TasIncFrame will copy to curinputdev if it's 4 and there is no scripted input that frame and zero every frame.  Set curdevinputdev=4 if there's scripted keyboard input
 Bugs:
     Why does resetting in game after remote shopping desync shops by one frame if you then TAS reset?

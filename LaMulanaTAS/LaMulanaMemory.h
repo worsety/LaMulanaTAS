@@ -1,6 +1,7 @@
 #pragma once
 #include "util.h"
 #include "d3d9.h"
+#include "xinput.h"
 
 class LaMulanaMemory
 {
@@ -168,6 +169,8 @@ public:
 	};
 
 	char &kb_enabled = *(base + 0x6d3618);
+	unsigned &cur_inputdev = *(unsigned*)(base + 0xdb74dc);
+	unsigned &winproc_inputdev = *(unsigned*)(base + 0xdb907c); // doesn't exist in the unpatched game
 	HWND &window = *(HWND*)(base + 0xdb4b68);
 	void (*&post_process)() = *(void (**)())(base + 0x6d6b64);
 	D3DFORMAT &display_format = *(D3DFORMAT*)(base + 0xdb4984);
@@ -222,6 +225,7 @@ public:
 
 	// This function is empty, I'm literally calling it just to prevent the compiler from assuming it knows what registers are and aren't destroyed wtf
 	void (*const noop)() = (void (*)())(base + 0x4f6540);
+	DWORD(__stdcall ** const XInputGetState)(DWORD, XINPUT_STATE*) = (DWORD(__stdcall**)(DWORD, XINPUT_STATE*))(base + 0x6ac1e8);
 
 	/*
 	jump, main, sub, item
