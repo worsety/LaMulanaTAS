@@ -8,5 +8,7 @@ Enhancements:
     Display all types of errors in the game window.  Maybe use GDI drawing on the window's DC in IncFrame since that should be between a Present and a Sleep?
     Jump preview?
 Better uninitialised data hooking: afaics, every object is created through obj_add or obj_add_instantiate, so mod those to set obj->create to an imported function which does its own stuff then obj->create = obj->create2; / *always set to create, purpose unknown */ return obj->create();
+    Accurate scrolling collision overlay (optional because it's ugly)
+    Remote shopping overlay
 Bugs:
     Why does resetting in game after remote shopping desync shops by one frame if you then TAS reset?
