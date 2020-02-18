@@ -897,8 +897,9 @@ void TAS::DrawOverlay()
 			text.push_back(show_hitboxes & 1 << k.type ? k.dispkey : ' ');
 		text.push_back(show_solids ? '-' : ' ');
 		text.push_back(show_tiles ? '=' : ' ');
-		text.push_back(show_exits ? 'K' : ' ');
+		text.push_back(show_exits ? 'E' : ' ');
 		text.push_back(show_loc ? 'L' : ' ');
+		text.push_back(hide_game ? 'G' : ' ');
 		text.push_back('\n');
 		if (memory.lemeza_spawned)
 		{
@@ -952,8 +953,8 @@ void TAS::DrawOverlay()
 		disp_pad(pad_binds.item, "V", " ");
 		text += (memory.pad_dir_state[0] & 1) ? '\x03' : ' ';
 		text += (memory.pad_dir_state[2] & 1) ? '\x05' : ' ';
-		text += (memory.pad_dir_state[3] & 1) ? '\x06' : ' ';
-		text += (memory.pad_dir_state[1] & 1) ? '\x04' : ' ';
+		text += (memory.pad_dir_state[3] & 1) ? '<' : ' ';
+		text += (memory.pad_dir_state[1] & 1) ? '>' : ' ';
 		text += '\n';
 		auto &key_binds = memory.bindings->keys.p;
 		disp_key(key_binds.prevmain, "-m ", "   ");
@@ -977,8 +978,8 @@ void TAS::DrawOverlay()
 		disp_key(key_binds.item, "V", " ");
 		disp_key(VK_UP, "\x03", " ");
 		disp_key(VK_DOWN, "\x05", " ");
-		disp_key(VK_LEFT, "\x06", " ");
-		disp_key(VK_RIGHT, "\x04", " ");
+		disp_key(VK_LEFT, "<", " ");
+		disp_key(VK_RIGHT, ">", " ");
 		text += '\n';
 
 		if ((unsigned)memory.rng < 32768)
