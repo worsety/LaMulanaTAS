@@ -25,13 +25,13 @@ public:
 };
 
 std::string getwinerror();
-HRESULT d3d9check(HRESULT hr, const char *file, int line, const char *code);
+HRESULT hrcheck(HRESULT hr, const char *file, int line, const char *code);
 #ifdef NDEBUG
-#define WINCHECKED(x) (x)
-#define D3D9CHECKED(x) (x)
+#define GLE(x) (x)
+#define HR(x) (x)
 #else
-#define WINCHECKED(x) ((x) ? (void)0 : throw std::runtime_error(strprintf("%s:%d %s\n%s", __FILE__, __LINE__, #x, getwinerror().data())))
-#define D3D9CHECKED(x) (d3d9check((x), __FILE__, __LINE__, #x))
+#define GLE(x) ((x) ? (void)0 : throw std::runtime_error(strprintf("%s:%d %s\n%s", __FILE__, __LINE__, #x, getwinerror().data())))
+#define HR(x) (hrcheck((x), __FILE__, __LINE__, #x))
 #endif
 
 using unique_handle = std::unique_ptr < std::remove_pointer<HANDLE>::type, decltype(&::CloseHandle)>;

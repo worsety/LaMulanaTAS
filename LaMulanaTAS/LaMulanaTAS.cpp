@@ -592,10 +592,10 @@ void TAS::Overlay()
 			(LONG)(memory.game_vert_offset + memory.game_vert_scale * memory.game_height),
 		};
 		while (!run && memory.game_state != 5) {
-			D3D9CHECKED(dev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &window_surface));
-			D3D9CHECKED(dev->StretchRect(overlay_surf, &unscaled_game, window_surface, &display_rect, D3DTEXF_LINEAR));
-			D3D9CHECKED(dev->EndScene());
-			D3D9CHECKED(dev->Present(nullptr, nullptr, nullptr, nullptr));
+			HR(dev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &window_surface));
+			HR(dev->StretchRect(overlay_surf, &unscaled_game, window_surface, &display_rect, D3DTEXF_LINEAR));
+			HR(dev->EndScene());
+			HR(dev->Present(nullptr, nullptr, nullptr, nullptr));
 			window_surface = 0;
 			// definitely not how to achieve a steady 60 fps but that's not critical here
 			target_time += 16;
@@ -604,7 +604,7 @@ void TAS::Overlay()
 				Sleep(sleep_time);
 			UpdateKeys();
 			ProcessKeys();
-			D3D9CHECKED(dev->BeginScene());
+			HR(dev->BeginScene());
 			DrawOverlay();
 		}
 	}
@@ -625,18 +625,18 @@ void TAS::DrawOverlay()
 	}
 
 	if (!overlay) {
-		D3D9CHECKED(dev->CreateTexture(640, 480, 1, D3DUSAGE_RENDERTARGET, memory.display_format, D3DPOOL_DEFAULT, &overlay, nullptr));
-		D3D9CHECKED(overlay->GetSurfaceLevel(0, &overlay_surf));
+		HR(dev->CreateTexture(640, 480, 1, D3DUSAGE_RENDERTARGET, memory.display_format, D3DPOOL_DEFAULT, &overlay, nullptr));
+		HR(overlay->GetSurfaceLevel(0, &overlay_surf));
 	}
 
-	D3D9CHECKED(dev->SetRenderTarget(0, overlay_surf));
+	HR(dev->SetRenderTarget(0, overlay_surf));
 	if (hide_game)
-		D3D9CHECKED(dev->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(255, 0, 0, 0), 0.f, 0));
+		HR(dev->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_ARGB(255, 0, 0, 0), 0.f, 0));
 	else
-		D3D9CHECKED(dev->StretchRect(memory.postprocessed_gamesurf, &unscaled_game, overlay_surf, &unscaled_game, D3DTEXF_POINT));
+		HR(dev->StretchRect(memory.postprocessed_gamesurf, &unscaled_game, overlay_surf, &unscaled_game, D3DTEXF_POINT));
 
 	CComPtr<IDirect3DStateBlock9> oldstate;
-	D3D9CHECKED(dev->CreateStateBlock(D3DSBT_ALL, &oldstate));
+	HR(dev->CreateStateBlock(D3DSBT_ALL, &oldstate));
 
 	if (!font4x6)
 		font4x6.reset(new BitmapFont(dev, 4, 6, tasModule, IDB_TOMTHUMB));
@@ -658,22 +658,22 @@ void TAS::DrawOverlay()
 		CComPtr<IDirect3DSurface9> surf;
 		D3DLOCKED_RECT rect1, rect2;
 
-		D3D9CHECKED(dev->CreateRenderTarget(256, 256, D3DFMT_A8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &surf, nullptr));
+		HR(dev->CreateRenderTarget(256, 256, D3DFMT_A8R8G8B8, D3DMULTISAMPLE_NONE, 0, TRUE, &surf, nullptr));
 		for (int i = 0; i < 256; i++)
 			font4x6->Add(1.f + (i & 0x0f) * 10.f, 2.f + (i & 0xf0) / 16 * 10.f, 0, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%.2x", i));
-		D3D9CHECKED(dev->SetRenderTarget(0, surf));
+		HR(dev->SetRenderTarget(0, surf));
 		font4x6->Draw();
-		D3D9CHECKED(dev->CreateTexture(256, 256, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &tex, nullptr));
-		D3D9CHECKED(surf->LockRect(&rect1, nullptr, D3DLOCK_READONLY));
-		D3D9CHECKED(tex->LockRect(0, &rect2, nullptr, 0));
+		HR(dev->CreateTexture(256, 256, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &tex, nullptr));
+		HR(surf->LockRect(&rect1, nullptr, D3DLOCK_READONLY));
+		HR(tex->LockRect(0, &rect2, nullptr, 0));
 		for (int i = 0; i < 256; i++)
 			memcpy((char*)rect2.pBits + rect2.Pitch * i, (char*)rect1.pBits + rect1.Pitch * i, min(rect1.Pitch, rect2.Pitch));
-		D3D9CHECKED(surf->UnlockRect());
-		D3D9CHECKED(tex->UnlockRect(0));
+		HR(surf->UnlockRect());
+		HR(tex->UnlockRect(0));
 		hit_hex.tex = tex;
 		hit_hex.texel_w = 1.f / 256;
 		hit_hex.texel_h = 1.f / 256;
-		D3D9CHECKED(oldstate->Apply());
+		HR(oldstate->Apply());
 	}
 
 	std::vector<xyzrhwdiff> hv;
@@ -770,13 +770,13 @@ void TAS::DrawOverlay()
 	}
 	if (hv.size())
 	{
-		D3D9CHECKED(dev->SetTexture(0, 0));
-		D3D9CHECKED(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE));
-		D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
-		D3D9CHECKED(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE));
-		D3D9CHECKED(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data()));
+		HR(dev->SetTexture(0, 0));
+		HR(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE));
+		HR(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
+		HR(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE));
+		HR(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST, hv.size() / 3, hv.data(), sizeof *hv.data()));
 		font4x6->Draw(D3DCOLOR_ARGB(128, 0, 0, 0));
-		D3D9CHECKED(oldstate->Apply());
+		HR(oldstate->Apply());
 	}
 
 	if (show_tiles)
@@ -821,18 +821,18 @@ void TAS::DrawOverlay()
 				i++;
 			}
 
-		D3D9CHECKED(dev->SetTexture(0, hit_tex.tex));
-		D3D9CHECKED(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1));
-		D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
-		D3D9CHECKED(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE));
-		D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, i * 4, i * 2, idx.data(), D3DFMT_INDEX16, vert.data(), sizeof vert[0]));
-		D3D9CHECKED(oldstate->Apply());
+		HR(dev->SetTexture(0, hit_tex.tex));
+		HR(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1));
+		HR(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
+		HR(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA));
+		HR(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE));
+		HR(dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE));
+		HR(dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE));
+		HR(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE));
+		HR(dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE));
+		HR(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE));
+		HR(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, i * 4, i * 2, idx.data(), D3DFMT_INDEX16, vert.data(), sizeof vert[0]));
+		HR(oldstate->Apply());
 	}
 
 	if (show_solids)
@@ -862,11 +862,11 @@ void TAS::DrawOverlay()
 			idx.insert(idx.end(), { i, i + 1, i + 3, i + 3, i + 2, i });
 			i += 4;
 		}
-		D3D9CHECKED(dev->SetTexture(0, 0));
-		D3D9CHECKED(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE));
-		D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 4 * solids.count, 2 * solids.count, idx.data(), D3DFMT_INDEX32, vert.data(), sizeof vert[0]));
+		HR(dev->SetTexture(0, 0));
+		HR(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE));
+		HR(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 4 * solids.count, 2 * solids.count, idx.data(), D3DFMT_INDEX32, vert.data(), sizeof vert[0]));
 		font4x6->Draw();
-		D3D9CHECKED(oldstate->Apply());
+		HR(oldstate->Apply());
 	}
 
 	if (show_loc && memory.lemeza_spawned)
@@ -885,10 +885,10 @@ void TAS::DrawOverlay()
 			vert[i].x = -0.5f + 640.f * (i & 1);
 		for (auto &v : vert)
 			v.z = 0, v.color = D3DCOLOR_ARGB(192, 255, 255, 0);
-		D3D9CHECKED(dev->SetTexture(0, 0));
-		D3D9CHECKED(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE));
-		D3D9CHECKED(dev->DrawPrimitiveUP(D3DPT_LINELIST, 6, vert.data(), sizeof vert[0]));
-		D3D9CHECKED(oldstate->Apply());
+		HR(dev->SetTexture(0, 0));
+		HR(dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE));
+		HR(dev->DrawPrimitiveUP(D3DPT_LINELIST, 6, vert.data(), sizeof vert[0]));
+		HR(oldstate->Apply());
 	}
 
 	if (show_overlay)
@@ -988,7 +988,7 @@ void TAS::DrawOverlay()
 		text += strprintf("\n\nRNG [%.6d] %5d", rngsteps, memory.rng);
 		font8x12->Add(630, 470, BMFALIGN_BOTTOM | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
 		font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
-		D3D9CHECKED(oldstate->Apply());
+		HR(oldstate->Apply());
 	}
 
 	if (show_exits)
@@ -1010,7 +1010,7 @@ void TAS::DrawOverlay()
 			}
 			font8x12->Add(288, 234, 0, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%2d,%2d,%2d", memory.cur_zone, memory.cur_room, memory.cur_screen));
 			font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
-			D3D9CHECKED(oldstate->Apply());
+			HR(oldstate->Apply());
 		}
 	}
 }

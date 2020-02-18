@@ -59,7 +59,7 @@ std::string getwinerror()
 	return getwinerror(::GetLastError());
 };
 
-HRESULT d3d9check(HRESULT hr, const char *file, int line, const char *code)
+HRESULT hrcheck(HRESULT hr, const char *file, int line, const char *code)
 {
 	if (SUCCEEDED(hr))
 		return hr;
@@ -82,18 +82,18 @@ BitmapFont::BitmapFont(IDirect3DDevice9* dev, int w, int h) : dev(dev), char_w(w
 	int tex_w = rounduppo2(w * 16), tex_h = rounduppo2(h * 8);
 	char_texw = 1.f * w / tex_w;
 	char_texh = 1.f * h / tex_h;
-	D3D9CHECKED(dev->CreateTexture(tex_w, tex_h, 1, 0, D3DFMT_A8, D3DPOOL_MANAGED, &tex, nullptr));
+	HR(dev->CreateTexture(tex_w, tex_h, 1, 0, D3DFMT_A8, D3DPOOL_MANAGED, &tex, nullptr));
 }
 
 BitmapFont::BitmapFont(IDirect3DDevice9* dev, int w, int h, HMODULE mod, int res) : BitmapFont(dev, w, h)
 {
 	DIBSECTION dib;
 	unique_handle bmp(::LoadImage(mod, MAKEINTRESOURCE(res), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION), ::DeleteObject);
-	WINCHECKED(bmp);
-	WINCHECKED(::GetObject(bmp.get(), sizeof dib, &dib));
+	GLE(bmp);
+	GLE(::GetObject(bmp.get(), sizeof dib, &dib));
 
 	D3DLOCKED_RECT rect;
-	D3D9CHECKED(tex->LockRect(0, &rect, nullptr, 0));
+	HR(tex->LockRect(0, &rect, nullptr, 0));
 	unsigned char *srcline = (unsigned char*)dib.dsBm.bmBits + dib.dsBm.bmWidthBytes * (dib.dsBm.bmHeight - 1);
 	unsigned char *dstline = (unsigned char*)rect.pBits;
 	const int bpp = dib.dsBm.bmBitsPixel;
@@ -116,7 +116,7 @@ BitmapFont::BitmapFont(IDirect3DDevice9* dev, int w, int h, HMODULE mod, int res
 			else if (bpp == 32)
 				dstline[x] = (srcline[x * 4] + srcline[x * 4 + 1] + srcline[x * 4 + 2] + 1) / 3;
 		}
-	D3D9CHECKED(tex->UnlockRect(0));
+	HR(tex->UnlockRect(0));
 }
 
 std::vector<std::string> split(const std::string &text, char delim) {
@@ -178,31 +178,31 @@ void BitmapFont::Draw(D3DCOLOR backcolor)
 {
 	if (!chars)
 		return;
-	D3D9CHECKED(dev->SetFVF(fvf));
-	D3D9CHECKED(dev->SetTexture(0, tex));
-	D3D9CHECKED(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
-	D3D9CHECKED(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA));
+	HR(dev->SetFVF(fvf));
+	HR(dev->SetTexture(0, tex));
+	HR(dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA));
+	HR(dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA));
 	if (backcolor)
 	{
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_LERP));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_LERP));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_TFACTOR));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_TFACTOR));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG0, D3DTA_TEXTURE | D3DTA_ALPHAREPLICATE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG0, D3DTA_TEXTURE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE));
-		D3D9CHECKED(dev->SetRenderState(D3DRS_TEXTUREFACTOR, backcolor));
+		HR(dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_LERP));
+		HR(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_LERP));
+		HR(dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_TFACTOR));
+		HR(dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_TFACTOR));
+		HR(dev->SetTextureStageState(0, D3DTSS_COLORARG0, D3DTA_TEXTURE | D3DTA_ALPHAREPLICATE));
+		HR(dev->SetTextureStageState(0, D3DTSS_ALPHAARG0, D3DTA_TEXTURE));
+		HR(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE));
+		HR(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE));
+		HR(dev->SetRenderState(D3DRS_TEXTUREFACTOR, backcolor));
 	}
 	else
 	{
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE | D3DTA_ALPHAREPLICATE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE));
-		D3D9CHECKED(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTOP_SELECTARG1));
+		HR(dev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE));
+		HR(dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE));
+		HR(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE | D3DTA_ALPHAREPLICATE));
+		HR(dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE));
+		HR(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE));
+		HR(dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTOP_SELECTARG1));
 	}
-	D3D9CHECKED(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, chars * 4, chars * 2, index.data(), D3DFMT_INDEX32, vert.data(), sizeof *vert.data()));
+	HR(dev->DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, chars * 4, chars * 2, index.data(), D3DFMT_INDEX32, vert.data(), sizeof *vert.data()));
 	chars = 0;
 }
