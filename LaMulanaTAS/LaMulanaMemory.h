@@ -5,8 +5,8 @@
 
 class LaMulanaMemory
 {
-    char *base;
 public:
+    char *base;
     LaMulanaMemory(char *base_) : base(base_) {}
 
     struct drawdata {

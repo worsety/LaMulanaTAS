@@ -592,7 +592,7 @@ void TAS::Overlay()
         };
         while (!run && memory.game_state != 5) {
             HR(dev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &window_surface));
-            HR(dev->StretchRect(overlay_surf, &unscaled_game, window_surface, &display_rect, D3DTEXF_LINEAR));
+            HR(dev->StretchRect(overlay_surf, &unscaled_game, window_surface, &display_rect, (D3DTEXTUREFILTERTYPE)*(memory.base + 0x4a326c)));
             HR(dev->EndScene());
             HR(dev->Present(nullptr, nullptr, nullptr, nullptr));
             window_surface = 0;
