@@ -121,12 +121,11 @@ public:
 
 	void UpdateKeys()
 	{
-		if (!memory.kb_enabled)
-			return;
+		bool active = !!memory.kb_enabled;
 		// there's a very efficient way to do this with an xor but whatever, legibility
 		for (int vk = 0; vk < 256; vk++)
 		{
-			bool held = GetAsyncKeyState(vk) < 0;
+			bool held = active && GetAsyncKeyState(vk) < 0;
 			keys[vk].pressed = held && !keys[vk].held;
 			keys[vk].released = !held && keys[vk].held;
 			keys[vk].held = held;
