@@ -30,7 +30,7 @@ P | Fast forward (also disables vsync for the rest of the session)
 [ | Normal speed
 ] | Frame advance
 
-Alt+Key | Action
+Shift+Key | Action
 :---:|:---
 1 | Toggle Lemeza's hurtbox
 2 | Toggle Lemeza's weapon hitboxes

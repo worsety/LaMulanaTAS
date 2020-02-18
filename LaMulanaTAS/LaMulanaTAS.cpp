@@ -476,37 +476,39 @@ static const struct {
 
 void TAS::ProcessKeys()
 {
-	if (keys[VK_OEM_6].pressed)
+	if (!keys[VK_SHIFT].held)
 	{
-		if (pause)
-			run = true;
-		pause = true;
+		if (keys[VK_OEM_6].pressed)
+		{
+			if (pause)
+				run = true;
+			pause = true;
+		}
+		if (keys[VK_OEM_4].pressed)
+			run = true, ff = false, pause = false;
+		if (keys['P'].pressed)
+		{
+			run = true, ff = true, pause = false;
+			memory.setvsync(false);
+		}
+		if (keys['O'].pressed)
+			show_overlay = !show_overlay;
+		if (keys['I'].pressed) {
+			has_reset = true;
+			LoadTAS();
+			memory.kill_objects();
+			memory.scrub_objects();
+			memory.reset_game();
+			memory.has_quicksave = 0;
+			memory.timeattack_cursor = -1;
+			frame = -2;
+			frame_count = 0;
+			run = resetting = true;
+		}
+		if (keys['U'].pressed)
+			LoadTAS();
 	}
-	if (keys[VK_OEM_4].pressed)
-		run = true, ff = false, pause = false;
-	if (keys['P'].pressed)
-	{
-		run = true, ff = true, pause = false;
-		memory.setvsync(false);
-	}
-	if (keys['O'].pressed)
-		show_overlay = !show_overlay;
-	if (keys['I'].pressed) {
-		has_reset = true;
-		LoadTAS();
-		memory.kill_objects();
-		memory.scrub_objects();
-		memory.reset_game();
-		memory.has_quicksave = 0;
-		memory.timeattack_cursor = -1;
-		frame = -2;
-		frame_count = 0;
-		run = resetting = true;
-	}
-	if (keys['U'].pressed)
-		LoadTAS();
-
-	if (keys[VK_MENU].held)
+	else
 	{
 		for (auto &&k : hitboxkeys)
 			show_hitboxes ^= keys[k.vk].pressed << k.type;
