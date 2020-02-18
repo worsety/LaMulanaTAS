@@ -168,6 +168,30 @@ public:
 		int unk08, unk0C, unk10, unk14;
 	};
 
+	struct pad_bindings {
+		unsigned char jump, attack, sub, item, ok, cancel;
+		unsigned char unk6, unk7; // mapped to up/down when polling
+		unsigned char pause, msx, nextmain, prevmain, nextsub, prevsub;
+		unsigned char unk14, unk15;
+		unsigned char prevmenu, nextmenu;
+		unsigned char up, down, left, right; // not actually used I think
+		unsigned char unk22;
+	};
+
+	struct key_bindings {
+		struct pad_bindings p;
+		unsigned char f2, f3, f4, f5, f6, f7, f8, f9;
+	};
+
+	struct bindings_t {
+		pad_bindings dinput, xinput, classic_controller, gamecube;
+		key_bindings keys;
+	};
+
+	struct key_state_t {
+		unsigned char repeat_state, state, repeat_delay;
+	};
+
 	char &kb_enabled = *(base + 0x6d3618);
 	unsigned &cur_inputdev = *(unsigned*)(base + 0xdb74dc);
 	unsigned &winproc_inputdev = *(unsigned*)(base + 0xdb907c); // doesn't exist in the unpatched game
@@ -182,6 +206,10 @@ public:
 	// Always 640x480 but the game uses these so I will too
 	float &game_width = *(float*)(base + 0xdb4b24);
 	float &game_height = *(float*)(base + 0x6d6af8);
+	bindings_t * const &bindings = *(bindings_t**)(base + 0xdb4b54);
+	key_state_t (&key_state)[256] = *(key_state_t(*)[256])(base + 0x6d3e20);
+	unsigned char (&pad_state)[128] = *(unsigned char(*)[128])(base + 0xdb7438);
+	unsigned char (&pad_dir_state)[8] = *(unsigned char(*)[8])(base + 0xdb7430);
 
 	short &rng = *(short *)(base + 0x6d4a50);
 	int &game_state = *(int*)(base + 0xdb4b80);

@@ -133,13 +133,14 @@ public:
 		}
 	}
 
-	bool run = true, pause, resetting, has_reset, ff;
+	bool initialised, run = true, pause, resetting, has_reset, ff;
 	bool scripting = true, passthrough = true;
 	bool show_overlay = true, show_exits, show_solids, show_loc, hide_game;
 	int show_tiles;
 	unsigned show_hitboxes = 1 << 7 | 1 << 9 | 1 << 11;  // unknown types, I want to know if anyone sees them
 
 	TAS(char *base);
+	void LoadBindings();
 	bool KeyPressed(int vk);
 	DWORD GetXInput(DWORD idx, XINPUT_STATE *state);
 	void IncFrame();
@@ -152,57 +153,58 @@ public:
 
 TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
 {
+}
+
+void TAS::LoadBindings()
+{
 	name2vk["up"] = VK_UP;
 	name2vk["right"] = VK_RIGHT;
 	name2vk["down"] = VK_DOWN;
 	name2vk["left"] = VK_LEFT;
-	name2vk["jump"] = 'Z';
-	name2vk["main"] = 'X';
-	name2vk["sub"] = 'C';
-	name2vk["item"] = 'V';
-	name2vk["+m"] = 'A';
-	name2vk["-m"] = 'Q';
-	name2vk["+s"] = 'S';
-	name2vk["-s"] = 'W';
-	name2vk["+menu"] = VK_TAB;
-	name2vk["-menu"] = VK_CONTROL;
-	name2vk["ok"] = 'Z';
-	name2vk["cancel"] = 'X';
-	name2vk["msx"] = VK_ESCAPE;
-	name2vk["ok2"] = VK_SPACE;
-	name2vk["ok3"] = VK_RETURN;
-	name2vk["cancel2"] = VK_BACK;
-	name2vk["cancel3"] = VK_ESCAPE;
-	name2vk["pause"] = name2vk["f1"] = VK_F1;
-	name2vk["f2"] = VK_F2;
-	name2vk["f3"] = VK_F3;
-	name2vk["f4"] = VK_F4;
-	name2vk["f5"] = VK_F5;
-	name2vk["f6"] = VK_F6;
-	name2vk["f7"] = VK_F7;
-	name2vk["f8"] = VK_F8;
-	name2vk["f9"] = VK_F9;
+	name2vk["jump"] = memory.bindings->keys.p.jump;
+	name2vk["main"] = memory.bindings->keys.p.attack;
+	name2vk["sub"] = memory.bindings->keys.p.sub;
+	name2vk["item"] = memory.bindings->keys.p.item;
+	name2vk["+m"] = memory.bindings->keys.p.nextmain;
+	name2vk["-m"] = memory.bindings->keys.p.prevmain;
+	name2vk["+s"] = memory.bindings->keys.p.prevsub;
+	name2vk["-s"] = memory.bindings->keys.p.nextsub;
+	name2vk["+menu"] = memory.bindings->keys.p.nextmenu;
+	name2vk["-menu"] = memory.bindings->keys.p.prevmenu;
+	name2vk["ok"] = memory.bindings->keys.p.ok;
+	name2vk["cancel"] = memory.bindings->keys.p.cancel;
+	name2vk["msx"] = memory.bindings->keys.p.msx;
+	name2vk["ok2"] = name2vk["space"] = VK_SPACE;
+	name2vk["ok3"] = name2vk["return"] = VK_RETURN;
+	name2vk["cancel2"] = name2vk["bksp"] = VK_BACK;
+	name2vk["cancel3"] = name2vk["esc"] = VK_ESCAPE;
+	name2vk["pause"] = name2vk["f1"] = memory.bindings->keys.p.pause;
+	name2vk["f2"] = memory.bindings->keys.f2;
+	name2vk["f3"] = memory.bindings->keys.f3;
+	name2vk["f4"] = memory.bindings->keys.f4;
+	name2vk["f5"] = memory.bindings->keys.f5;
+	name2vk["f6"] = memory.bindings->keys.f6;
+	name2vk["f7"] = memory.bindings->keys.f7;
+	name2vk["f8"] = memory.bindings->keys.f8;
+	name2vk["f9"] = memory.bindings->keys.f9;
 	name2vk["p-up"] = PAD_UP;
 	name2vk["p-down"] = PAD_DOWN;
 	name2vk["p-left"] = PAD_LEFT;
 	name2vk["p-right"] = PAD_RIGHT;
-	name2vk["p-jump"] = PAD_A;
-	name2vk["p-main"] = PAD_X;
-	name2vk["p-sub"] = PAD_B;
-	name2vk["p-item"] = PAD_Y;
-	name2vk["p+m"] = PAD_R1;
-	name2vk["p-m"] = PAD_L1;
-	name2vk["p+s"] = PAD_R2;
-	name2vk["p-s"] = PAD_L2;
-	name2vk["p+menu"] = PAD_R1;
-	name2vk["p-menu"] = PAD_L1;
-	name2vk["p-ok"] = PAD_A;
-	name2vk["p-cancel"] = PAD_B;
-	name2vk["p-pause"] = PAD_SELECT;
-	name2vk["p-msx"] = PAD_START;
-	memset(keys, 0, sizeof keys);
-
-	LoadTAS();
+	name2vk["p-jump"] = PAD_BTN + memory.bindings->xinput.jump;
+	name2vk["p-main"] = PAD_BTN + memory.bindings->xinput.attack;
+	name2vk["p-sub"] = PAD_BTN + memory.bindings->xinput.sub;
+	name2vk["p-item"] = PAD_BTN + memory.bindings->xinput.item;
+	name2vk["p+m"] = PAD_BTN + memory.bindings->xinput.nextmain;
+	name2vk["p-m"] = PAD_BTN + memory.bindings->xinput.prevmain;
+	name2vk["p+s"] = PAD_BTN + memory.bindings->xinput.nextsub;
+	name2vk["p-s"] = PAD_BTN + memory.bindings->xinput.prevsub;
+	name2vk["p+menu"] = PAD_BTN + memory.bindings->xinput.nextmenu;
+	name2vk["p-menu"] = PAD_BTN + memory.bindings->xinput.prevmenu;
+	name2vk["p-ok"] = PAD_BTN + memory.bindings->xinput.ok;
+	name2vk["p-cancel"] = PAD_BTN + memory.bindings->xinput.cancel;
+	name2vk["p-pause"] = PAD_BTN + memory.bindings->xinput.pause;
+	name2vk["p-msx"] = PAD_BTN + memory.bindings->xinput.msx;
 }
 
 class parsing_exception :std::exception {
@@ -224,6 +226,8 @@ void TAS::LoadTAS()
 		//MessageBox(nullptr, L"Couldn't load script.txt", L"TAS error", MB_OK);
 		return;
 	}
+
+	LoadBindings();
 
 	int curframe = 0;
 	size_t p = 0;
@@ -521,6 +525,12 @@ void TAS::ProcessKeys()
 
 void TAS::IncFrame()
 {
+	if (!initialised)
+	{
+		LoadTAS();
+		initialised = true;
+	}
+
 	UpdateKeys();
 	ProcessKeys();
 
@@ -908,35 +918,68 @@ void TAS::DrawOverlay()
 		font8x12->Add(10, 470, BMFALIGN_BOTTOM | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
 
 		text.clear();
-		static const struct { const char *name, *disp, *blank; }
-		inputs[] =
+
+		auto disp_pad = [&](unsigned char btn, char *disp, char *blank)
 		{
-			{"f1", "F1 ", ""},
-			{"f2", "F2 ", ""},
-			{"f3", "F3 ", ""},
-			{"f4", "F4 ", ""},
-			{"f5", "F5 ", ""},
-			{"f6", "F6 ", ""},
-			{"f7", "F7 ", ""},
-			{"f8", "F8 ", ""},
-			{"f9", "F9 ", ""},
-			{"ok", "Z", " "},
-			{"cancel", "X\n", " \n"},
-			{"+m", "+m ", ""},
-			{"-m", "-m ", ""},
-			{"+s", "+s ", ""},
-			{"-s", "-s ", ""},
-			{"jump", "Z", " "},
-			{"main", "X", " "},
-			{"sub", "C", " "},
-			{"item", "V", " "},
-			{"up", " U", "  "},
-			{"down", "D", " "},
-			{"left", "<", " "},
-			{"right", ">", " "},
+			text += (memory.pad_state[btn] & 1) ? disp : blank;
 		};
-		for (auto input : inputs)
-			text += KeyPressed(name2vk[input.name]) ? input.disp : input.blank;
+		auto disp_key = [&](unsigned char vk, char *disp, char *blank)
+		{
+			text += (memory.key_state[vk].state & 1) ? disp : blank;
+		};
+
+		for (int vk = VK_F2; vk <= VK_F9; vk++)
+			if (memory.key_state[vk].state & 1)
+			{
+				text += 'F'; text += (char)('2' + vk - VK_F2);
+			}
+		text += '\n';
+		auto &pad_binds = memory.cur_inputdev < 4 ? (&memory.bindings->dinput)[memory.cur_inputdev] : memory.bindings->xinput;
+		disp_pad(pad_binds.prevmain, "-m ", "   ");
+		disp_pad(pad_binds.nextmain, "+m ", "");
+		disp_pad(pad_binds.prevsub, "-s ", "   ");
+		disp_pad(pad_binds.nextsub, "+s ", "");
+		disp_pad(pad_binds.msx, "\x09", " ");
+		disp_pad(pad_binds.pause, "=", " ");
+		disp_pad(pad_binds.prevmenu, "\x07", " ");
+		disp_pad(pad_binds.nextmenu, "\x08", "");
+		disp_pad(pad_binds.ok, "\x01", " ");
+		disp_pad(pad_binds.cancel, "\x02", " ");
+		disp_pad(pad_binds.jump, "Z", " ");
+		disp_pad(pad_binds.attack, "X", " ");
+		disp_pad(pad_binds.sub, "C", " ");
+		disp_pad(pad_binds.item, "V", " ");
+		text += (memory.pad_dir_state[0] & 1) ? '\x03' : ' ';
+		text += (memory.pad_dir_state[2] & 1) ? '\x05' : ' ';
+		text += (memory.pad_dir_state[3] & 1) ? '\x06' : ' ';
+		text += (memory.pad_dir_state[1] & 1) ? '\x04' : ' ';
+		text += '\n';
+		auto &key_binds = memory.bindings->keys.p;
+		disp_key(key_binds.prevmain, "-m ", "   ");
+		disp_key(key_binds.nextmain, "+m ", "");
+		disp_key(key_binds.prevsub, "-s ", "   ");
+		disp_key(key_binds.nextsub, "+s ", "");
+		disp_key(key_binds.msx, "\x09", " ");
+		disp_key(key_binds.pause, "=", " ");
+		disp_key(key_binds.prevmenu, "\x07", " ");
+		disp_key(key_binds.nextmenu, "\x08", "");
+		disp_key(key_binds.ok, "\x01", " ");
+		disp_key(key_binds.cancel, "\x02", " ");
+		disp_key(VK_SPACE, "\x01", " ");
+		disp_key(VK_BACK, "\x02", " ");
+		disp_key(VK_RETURN, "\x01", " ");
+		disp_key(VK_ESCAPE, "\x02", " ");
+		disp_key(key_binds.cancel, "\x02", " ");
+		disp_key(key_binds.jump, "Z", " ");
+		disp_key(key_binds.attack, "X", " ");
+		disp_key(key_binds.sub, "C", " ");
+		disp_key(key_binds.item, "V", " ");
+		disp_key(VK_UP, "\x03", " ");
+		disp_key(VK_DOWN, "\x05", " ");
+		disp_key(VK_LEFT, "\x06", " ");
+		disp_key(VK_RIGHT, "\x04", " ");
+		text += '\n';
+
 		if ((unsigned)memory.rng < 32768)
 			for (; currng != memory.rng; rngsteps++)
 				currng = currng * 109 + 1021 & 0x7fff;
