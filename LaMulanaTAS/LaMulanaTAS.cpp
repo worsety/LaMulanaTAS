@@ -112,24 +112,58 @@ public:
     } hit_parts, hit_hex;
     CComPtr<IDirect3DTexture9> overlay;
     CComPtr<IDirect3DSurface9> overlay_surf;
+    int repeat_delay, repeat_speed;
 
     struct keystate {
-        unsigned char held : 1;
-        unsigned char pressed : 1;
-        unsigned char released : 1;
+        union {
+            struct {
+                unsigned char held : 1;
+                unsigned char pressed : 1;
+                unsigned char released : 1;
+                unsigned char repeat : 1;
+                unsigned char passthrough : 1;
+            };
+            unsigned char bits;
+        };
+        unsigned char repeat_counter;
     } keys[256];
 
     void UpdateKeys()
     {
         bool active = !!memory.kb_enabled;
-        // there's a very efficient way to do this with an xor but whatever, legibility
         for (int vk = 0; vk < 256; vk++)
         {
             bool held = active && GetAsyncKeyState(vk) < 0;
             keys[vk].pressed = held && !keys[vk].held;
             keys[vk].released = !held && keys[vk].held;
-            keys[vk].held = held;
+            keys[vk].held = keys[vk].passthrough = held;
+            if (keys[vk].pressed)
+            {
+                keys[vk].repeat = true;
+                keys[vk].repeat_counter = repeat_delay;
+            }
+            else if (held && --keys[vk].repeat_counter == 0)
+            {
+                keys[vk].repeat = true;
+                keys[vk].repeat_counter = repeat_speed;
+            }
+            else
+            {
+                keys[vk].repeat = false;
+            }
         }
+        keys[VK_SHIFT].passthrough = false;
+        keys[VK_LSHIFT].passthrough = false;
+        keys[VK_RSHIFT].passthrough = false;
+    }
+
+    enum POLLTYPE { POLL_HELD, POLL_PRESSED, POLL_RELEASED, POLL_REPEAT };
+    bool Poll(int vk, bool mod = false, POLLTYPE type = POLL_PRESSED)
+    {
+        if (mod != !!keys[VK_SHIFT].held)
+            return false;
+        keys[vk].passthrough = false;
+        return !!(keys[vk].bits & 1 << type);
     }
 
     bool initialised, run = true, pause, resetting, has_reset, ff;
@@ -152,6 +186,11 @@ public:
 
 TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
 {
+    DWORD keyboard_delay, keyboard_speed;
+    GLE(SystemParametersInfo(SPI_GETKEYBOARDDELAY, 0, &keyboard_delay, 0));
+    GLE(SystemParametersInfo(SPI_GETKEYBOARDSPEED, 0, &keyboard_speed, 0));
+    repeat_delay = 15 + 15 * keyboard_delay;
+    repeat_speed = 23 - 7 * keyboard_speed / 10;
 }
 
 void TAS::LoadBindings()
@@ -425,8 +464,8 @@ bool TAS::KeyPressed(int vk)
 {
     if (resetting)
         return false;
-    return (scripting && 0 != cur_frame_inputs.count(vk))
-        || (passthrough && memory.kb_enabled && keys[vk].held);
+    return (scripting && cur_frame_inputs.count(vk))
+        || (passthrough && keys[vk].passthrough);
 }
 
 DWORD TAS::GetXInput(DWORD idx, XINPUT_STATE *state)
@@ -475,53 +514,48 @@ static const struct {
 
 void TAS::ProcessKeys()
 {
-    if (!keys[VK_SHIFT].held)
+    if (Poll(VK_OEM_6))
     {
-        if (keys[VK_OEM_6].pressed)
-        {
-            if (pause)
-                run = true;
-            pause = true;
-        }
-        if (keys[VK_OEM_4].pressed)
-            run = true, ff = false, pause = false;
-        if (keys['P'].pressed)
-        {
-            run = true, ff = true, pause = false;
-            memory.setvsync(false);
-        }
-        if (keys['O'].pressed)
-            show_overlay = !show_overlay;
-        if (keys['I'].pressed) {
-            has_reset = true;
-            LoadTAS();
-            memory.kill_objects();
-            memory.scrub_objects();
-            memory.reset_game();
-            memory.has_quicksave = 0;
-            memory.timeattack_cursor = -1;
-            frame = -2;
-            frame_count = 0;
-            run = resetting = true;
-        }
-        if (keys['U'].pressed)
-            LoadTAS();
+        if (pause)
+            run = true;
+        pause = true;
     }
-    else
+    if (Poll(VK_OEM_4))
+        run = true, ff = false, pause = false;
+    if (Poll('P'))
     {
-        for (auto &&k : hitboxkeys)
-            show_hitboxes ^= keys[k.vk].pressed << k.type;
-        if (keys[VK_OEM_MINUS].pressed)
-            show_solids = !show_solids;
-        if (keys[VK_OEM_PLUS].pressed)
-            show_tiles = (show_tiles + 1) % 3;
-        if (keys['E'].pressed)
-            show_exits = !show_exits;
-        if (keys['L'].pressed)
-            show_loc = !show_loc;
-        if (keys['G'].pressed)
-            hide_game = !hide_game;
+        run = true, ff = true, pause = false;
+        memory.setvsync(false);
     }
+    if (Poll('O'))
+        show_overlay = !show_overlay;
+    if (Poll('I'))
+    {
+        has_reset = true;
+        LoadTAS();
+        memory.kill_objects();
+        memory.scrub_objects();
+        memory.reset_game();
+        memory.has_quicksave = 0;
+        memory.timeattack_cursor = -1;
+        frame = -2;
+        frame_count = 0;
+        run = resetting = true;
+    }
+    if (Poll('U'))
+        LoadTAS();
+    for (auto &&k : hitboxkeys)
+        show_hitboxes ^= Poll(k.vk, true) << k.type;
+    if (Poll(VK_OEM_MINUS, true))
+        show_solids = !show_solids;
+    if (Poll(VK_OEM_PLUS, true))
+        show_tiles = (show_tiles + 1) % 3;
+    if (Poll('E', true))
+        show_exits = !show_exits;
+    if (Poll('L', true))
+        show_loc = !show_loc;
+    if (Poll('G', true))
+        hide_game = !hide_game;
 }
 
 void TAS::IncFrame()
