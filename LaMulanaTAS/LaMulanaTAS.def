@@ -1,9 +1,1 @@
-; GetProcAddress isn't actually used any more but why not export anyway
 LIBRARY	LaMulanaTAS
-EXPORTS
-	TasInit
-	TasGetKeyState
-	TasIncFrame
-	TasRender
-	TasTime
-	TasSleep
