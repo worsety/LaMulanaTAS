@@ -214,6 +214,7 @@ public:
     short &rng = *(short *)(base + 0x6d4a50);
     int &game_state = *(int*)(base + 0xdb4b80);
     char &has_quicksave = *(base + 0x6d2967);
+    short &save_slot = *(short*)(base + 0xdb7194);
     short &timeattack_cursor = *(short*)(base + 0x6d0218);
     int &lemeza_spawned = *(int*)(base + 0xdb753c);
     object *&lemeza_obj = *(object**)(base + 0xdb7538);
