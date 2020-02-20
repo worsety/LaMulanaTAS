@@ -102,10 +102,12 @@ COPY /Y "$(SolutionDir)\README.md" "$(SolutionDir)\dist\"</Command>
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="LaMulanaTAS.cpp">
+    <ClCompile Include="Exports.cpp" />
+    <ClCompile Include="TAS.cpp">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Default</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Default</CompileAs>
     </ClCompile>
+    <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
