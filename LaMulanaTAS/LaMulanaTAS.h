@@ -10,8 +10,7 @@
 
 enum
 {
-    PAD_BTN = 0x100,
-    PAD_START = PAD_BTN,
+    PAD_START,
     PAD_SELECT,
     PAD_L3,
     PAD_R3,
@@ -23,7 +22,7 @@ enum
     PAD_Y,
     PAD_L2,
     PAD_R2,
-    PAD_UP = 0x180,
+    PAD_UP = 0x80,
     PAD_DOWN,
     PAD_LEFT,
     PAD_RIGHT,
@@ -71,13 +70,15 @@ public:
     LaMulanaMemory memory;
     int frame, frame_count, rngsteps;
     std::map<int, std::string> sections;
-    std::map<int, std::unordered_set<int>> frame_inputs;
+    std::map<int, std::unordered_set<unsigned char*>> frame_keys;
+    std::map<int, std::unordered_set<unsigned char*>> frame_btns;
     std::map<int, std::list<std::function<void()>>> frame_actions;
-    std::unordered_set<int> cur_frame_inputs;
+    std::unordered_set<unsigned char> cur_frame_keys;
+    std::unordered_set<unsigned char> cur_frame_btns;
     std::vector<LaMulanaMemory::objfixup> objfixups;
     short currng = -1;
-    using frame_iter = std::map<int, std::unordered_set<int>>::iterator;
-    std::map<std::string, int> name2vk;
+    using input_iter = std::map<int, std::unordered_set<unsigned char*>>::iterator;
+    std::map<std::string, unsigned char*> name2vk, name2btn;
     IDirect3DDevice9 *curdev;
     std::unique_ptr<BitmapFont> font4x6, font8x12;
     struct {

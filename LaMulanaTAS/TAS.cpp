@@ -57,56 +57,81 @@ TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
     shopping_overlay = new ShoppingOverlay(*this);
 }
 
+unsigned char hardcoded_bindings[] = {
+    VK_UP,
+    VK_RIGHT,
+    VK_DOWN,
+    VK_LEFT,
+    VK_SPACE,
+    VK_RETURN,
+    VK_BACK,
+    VK_ESCAPE,
+};
+
+// This is pretty upsetting.  The first time the games polls input devices it hasn't loaded bindings yet
 void TAS::LoadBindings()
 {
-    name2vk["up"] = VK_UP;
-    name2vk["right"] = VK_RIGHT;
-    name2vk["down"] = VK_DOWN;
-    name2vk["left"] = VK_LEFT;
-    name2vk["jump"] = memory.bindings->keys.p.jump;
-    name2vk["main"] = memory.bindings->keys.p.attack;
-    name2vk["sub"] = memory.bindings->keys.p.sub;
-    name2vk["item"] = memory.bindings->keys.p.item;
-    name2vk["+m"] = memory.bindings->keys.p.nextmain;
-    name2vk["-m"] = memory.bindings->keys.p.prevmain;
-    name2vk["+s"] = memory.bindings->keys.p.prevsub;
-    name2vk["-s"] = memory.bindings->keys.p.nextsub;
-    name2vk["+menu"] = memory.bindings->keys.p.nextmenu;
-    name2vk["-menu"] = memory.bindings->keys.p.prevmenu;
-    name2vk["ok"] = memory.bindings->keys.p.ok;
-    name2vk["cancel"] = memory.bindings->keys.p.cancel;
-    name2vk["msx"] = memory.bindings->keys.p.msx;
-    name2vk["ok2"] = name2vk["space"] = VK_SPACE;
-    name2vk["ok3"] = name2vk["return"] = VK_RETURN;
-    name2vk["cancel2"] = name2vk["bksp"] = VK_BACK;
-    name2vk["cancel3"] = name2vk["esc"] = VK_ESCAPE;
-    name2vk["pause"] = name2vk["f1"] = memory.bindings->keys.p.pause;
-    name2vk["f2"] = memory.bindings->keys.f2;
-    name2vk["f3"] = memory.bindings->keys.f3;
-    name2vk["f4"] = memory.bindings->keys.f4;
-    name2vk["f5"] = memory.bindings->keys.f5;
-    name2vk["f6"] = memory.bindings->keys.f6;
-    name2vk["f7"] = memory.bindings->keys.f7;
-    name2vk["f8"] = memory.bindings->keys.f8;
-    name2vk["f9"] = memory.bindings->keys.f9;
-    name2vk["p-up"] = PAD_UP;
-    name2vk["p-down"] = PAD_DOWN;
-    name2vk["p-left"] = PAD_LEFT;
-    name2vk["p-right"] = PAD_RIGHT;
-    name2vk["p-jump"] = PAD_BTN + memory.bindings->xinput.jump;
-    name2vk["p-main"] = PAD_BTN + memory.bindings->xinput.attack;
-    name2vk["p-sub"] = PAD_BTN + memory.bindings->xinput.sub;
-    name2vk["p-item"] = PAD_BTN + memory.bindings->xinput.item;
-    name2vk["p+m"] = PAD_BTN + memory.bindings->xinput.nextmain;
-    name2vk["p-m"] = PAD_BTN + memory.bindings->xinput.prevmain;
-    name2vk["p+s"] = PAD_BTN + memory.bindings->xinput.nextsub;
-    name2vk["p-s"] = PAD_BTN + memory.bindings->xinput.prevsub;
-    name2vk["p+menu"] = PAD_BTN + memory.bindings->xinput.nextmenu;
-    name2vk["p-menu"] = PAD_BTN + memory.bindings->xinput.prevmenu;
-    name2vk["p-ok"] = PAD_BTN + memory.bindings->xinput.ok;
-    name2vk["p-cancel"] = PAD_BTN + memory.bindings->xinput.cancel;
-    name2vk["p-pause"] = PAD_BTN + memory.bindings->xinput.pause;
-    name2vk["p-msx"] = PAD_BTN + memory.bindings->xinput.msx;
+    static unsigned char
+        up = VK_UP,
+        down = VK_DOWN,
+        left = VK_LEFT,
+        right = VK_RIGHT,
+        space = VK_SPACE,
+        ret = VK_RETURN,
+        bksp = VK_BACK,
+        esc = VK_ESCAPE,
+        pad_up = PAD_UP,
+        pad_down = PAD_DOWN,
+        pad_left = PAD_LEFT,
+        pad_right = PAD_RIGHT;
+    name2vk["up"] = &up;
+    name2vk["down"] = &down;
+    name2vk["left"] = &left;
+    name2vk["right"] = &right;
+    name2vk["jump"] = &memory.bindings->keys.p.jump;
+    name2vk["main"] = &memory.bindings->keys.p.attack;
+    name2vk["sub"] = &memory.bindings->keys.p.sub;
+    name2vk["item"] = &memory.bindings->keys.p.item;
+    name2vk["+m"] = &memory.bindings->keys.p.nextmain;
+    name2vk["-m"] = &memory.bindings->keys.p.prevmain;
+    name2vk["+s"] = &memory.bindings->keys.p.prevsub;
+    name2vk["-s"] = &memory.bindings->keys.p.nextsub;
+    name2vk["+menu"] = &memory.bindings->keys.p.nextmenu;
+    name2vk["-menu"] = &memory.bindings->keys.p.prevmenu;
+    name2vk["ok"] = &memory.bindings->keys.p.ok;
+    name2vk["cancel"] = &memory.bindings->keys.p.cancel;
+    name2vk["msx"] = &memory.bindings->keys.p.msx;
+    name2vk["ok2"] = name2vk["space"] = &space;
+    name2vk["ok3"] = name2vk["return"] = &ret;
+    name2vk["cancel2"] = name2vk["bksp"] = &bksp;
+    name2vk["cancel3"] = name2vk["esc"] = &esc;
+    name2vk["pause"] = name2vk["f1"] = &memory.bindings->keys.p.pause;
+    name2vk["f2"] = &memory.bindings->keys.f2;
+    name2vk["f3"] = &memory.bindings->keys.f3;
+    name2vk["f4"] = &memory.bindings->keys.f4;
+    name2vk["f5"] = &memory.bindings->keys.f5;
+    name2vk["f6"] = &memory.bindings->keys.f6;
+    name2vk["f7"] = &memory.bindings->keys.f7;
+    name2vk["f8"] = &memory.bindings->keys.f8;
+    name2vk["f9"] = &memory.bindings->keys.f9;
+    name2btn["p-up"] = &pad_up;
+    name2btn["p-down"] = &pad_down;
+    name2btn["p-left"] = &pad_left;
+    name2btn["p-right"] = &pad_right;
+    name2btn["p-jump"] = &memory.bindings->xinput.jump;
+    name2btn["p-main"] = &memory.bindings->xinput.attack;
+    name2btn["p-sub"] = &memory.bindings->xinput.sub;
+    name2btn["p-item"] = &memory.bindings->xinput.item;
+    name2btn["p+m"] = &memory.bindings->xinput.nextmain;
+    name2btn["p-m"] = &memory.bindings->xinput.prevmain;
+    name2btn["p+s"] = &memory.bindings->xinput.nextsub;
+    name2btn["p-s"] = &memory.bindings->xinput.prevsub;
+    name2btn["p+menu"] = &memory.bindings->xinput.nextmenu;
+    name2btn["p-menu"] = &memory.bindings->xinput.prevmenu;
+    name2btn["p-ok"] = &memory.bindings->xinput.ok;
+    name2btn["p-cancel"] = &memory.bindings->xinput.cancel;
+    name2btn["p-pause"] = &memory.bindings->xinput.pause;
+    name2btn["p-msx"] = &memory.bindings->xinput.msx;
 }
 
 class parsing_exception :std::exception {
@@ -129,14 +154,16 @@ void TAS::LoadTAS()
         return;
     }
 
-    LoadBindings();
+    LoadBindings(); // except not really :(
 
     int curframe = 0;
     size_t p = 0;
     int linenum = 0;
     std::string line, token;
-    frame_inputs.clear();
-    frame_inputs.emplace(0, std::unordered_set<int>());
+    frame_keys.clear();
+    frame_keys.emplace(0, std::unordered_set<unsigned char*>());
+    frame_btns.clear();
+    frame_btns.emplace(0, std::unordered_set<unsigned char*>());
     frame_actions.clear();
     sections.clear();
     objfixups.clear();
@@ -201,11 +228,14 @@ void TAS::LoadTAS()
                     int frames = 0;
                     if (m[1].length())
                         frames = std::stoi(m[1]);
-                    frame_inputs.emplace(curframe + frames, (--frame_inputs.upper_bound(curframe + frames))->second);
-                    frame_inputs.emplace(curframe, (--frame_inputs.upper_bound(curframe))->second);
-                    if (frames > 0)
+                    for (auto *frame_inputs : { &frame_keys, &frame_btns })
                     {
-                        frame_inputs.emplace(curframe + frames - 1, (--frame_inputs.upper_bound(curframe + frames - 1))->second);
+                        frame_inputs->emplace(curframe + frames, (--frame_inputs->upper_bound(curframe + frames))->second);
+                        frame_inputs->emplace(curframe, (--frame_inputs->upper_bound(curframe))->second);
+                        if (frames > 0)
+                        {
+                            frame_inputs->emplace(curframe + frames - 1, (--frame_inputs->upper_bound(curframe + frames - 1))->second);
+                        }
                     }
 
                     size_t pos = 0;
@@ -216,25 +246,29 @@ void TAS::LoadTAS()
                         bool release = false;
                         if (input[0] == '^')
                             release = true, input = input.substr(1);
-                        int vk;
+                        unsigned char *inptr;
+                        bool is_btn = 0 != name2btn.count(input);
                         try
                         {
-                            vk = name2vk.at(input);
-
+                            if (is_btn)
+                                inptr = name2btn.at(input);
+                            else
+                                inptr = name2vk.at(input);
                         }
                         catch (std::out_of_range&)
                         {
                             throw parsing_exception(strprintf("Unknown input '%s' on line %d", input.data(), linenum));
                         }
 
-                        frame_iter last_frame = frame_inputs.lower_bound(curframe + frames);
+                        auto &frame_inputs = is_btn ? frame_btns : frame_keys;
+                        input_iter last_frame = frame_inputs.lower_bound(curframe + frames);
                         if (frames == 0)
                             last_frame = frame_inputs.end();
                         for (auto i = frame_inputs.find(curframe); i != last_frame; ++i)
                             if (release)
-                                i->second.erase(vk);
+                                i->second.erase(inptr);
                             else
-                                i->second.insert(vk);
+                                i->second.insert(inptr);
 
                         pos = end == std::string::npos ? end : end + 1;
                     }
@@ -328,7 +362,7 @@ bool TAS::KeyPressed(int vk)
 {
     if (resetting)
         return false;
-    return (scripting && cur_frame_inputs.count(vk))
+    return (scripting && cur_frame_keys.count(vk))
         || (passthrough && keys[vk].passthrough);
 }
 
@@ -342,10 +376,8 @@ DWORD TAS::GetXInput(DWORD idx, XINPUT_STATE *state)
 
     if (scripting)
     {
-        for (auto &&i : cur_frame_inputs)
+        for (auto &&i : cur_frame_btns)
         {
-            if (i < 0x100)
-                continue;
             ret = ERROR_SUCCESS;
             if (i >= PAD_START && i <= PAD_Y)
                 state->Gamepad.wButtons |= XINPUT_BTN[i - PAD_START];
@@ -378,10 +410,16 @@ void TAS::IncFrame()
         for (auto x : action_iter->second)
             x();
 
-    cur_frame_inputs.clear();
-    auto input_iter = --frame_inputs.upper_bound(frame);
-    if (frame_inputs.end() != input_iter)
-        cur_frame_inputs = input_iter->second;
+    cur_frame_keys.clear();
+    cur_frame_btns.clear();
+    auto key_iter = --frame_keys.upper_bound(frame);
+    if (frame_keys.end() != key_iter)
+        for (auto &&k : key_iter->second)
+            cur_frame_keys.insert(*k);
+    auto btn_iter = --frame_btns.upper_bound(frame);
+    if (frame_btns.end() != btn_iter)
+        for (auto &&b : btn_iter->second)
+            cur_frame_btns.insert(*b);
 
     if (frame >= 0)
     {
@@ -396,13 +434,7 @@ void TAS::IncFrame()
     if (pause)
         run = false;
 
-    if (_InterlockedExchange(&memory.winproc_inputdev, 0) && passthrough)
+    if (passthrough && _InterlockedExchange(&memory.winproc_inputdev, 0)
+        || scripting && !cur_frame_keys.empty())
         memory.cur_inputdev = 4;
-    else if (scripting)
-        for (auto &&i : cur_frame_inputs)
-            if (i < 256)
-            {
-                memory.cur_inputdev = 4;
-                break;
-            }
 }
