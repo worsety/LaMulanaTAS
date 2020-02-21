@@ -130,7 +130,7 @@ std::vector<std::string> split(const std::string &text, char delim) {
     return tokens;
 }
 
-void BitmapFont::Add(float x, float y, int align, D3DCOLOR color, const std::string &text)
+void BitmapFont::Add(float x, float y, int align, D3DCOLOR color_odd, D3DCOLOR color_even, const std::string &text, bool skip_spaces)
 {
     std::vector<std::string> lines = split(text, '\n');
 
@@ -142,26 +142,36 @@ void BitmapFont::Add(float x, float y, int align, D3DCOLOR color, const std::str
         draw_x -= char_w * line++->size();
     if (align & BMFALIGN_BOTTOM)
         draw_y -= lines.size() * char_h;
+    bool odd = true;
     for (int c : text)
     {
-        if (c == '\n')
+        switch (c)
         {
-            draw_y += char_h, draw_x = x;
-            if (align & BMFALIGN_RIGHT)
-                draw_x -= char_w * line++->size();
-            continue;
+            case '\n':
+                draw_y += char_h, draw_x = x;
+                odd = !odd;
+                if (align & BMFALIGN_RIGHT)
+                    draw_x -= char_w * line++->size();
+                continue;
+            case ' ':
+                if (skip_spaces)
+                {
+                    draw_x += char_w, chars++;
+                    continue;
+                }
+            default:
+                for (int j = 0; j < 4; j++)
+                {
+                    vert[4 * chars + j].x = draw_x + !!(j & 1) * char_w - 0.5f;
+                    vert[4 * chars + j].y = draw_y + !!(j & 2) * char_h - 0.5f;
+                    vert[4 * chars + j].u = (c & 15) * char_texw + !!(j & 1) * char_texw;
+                    vert[4 * chars + j].v = (c >> 4) * char_texh + !!(j & 2) * char_texh;
+                    vert[4 * chars + j].z = 0;
+                    vert[4 * chars + j].w = 1;
+                    vert[4 * chars + j].color = odd ? color_odd : color_even;
+                }
+                draw_x += char_w, chars++;
         }
-        for (int j = 0; j < 4; j++)
-        {
-            vert[4 * chars + j].x = draw_x + !!(j & 1) * char_w - 0.5f;
-            vert[4 * chars + j].y = draw_y + !!(j & 2) * char_h - 0.5f;
-            vert[4 * chars + j].u = (c & 15) * char_texw + !!(j & 1) * char_texw;
-            vert[4 * chars + j].v = (c >> 4) * char_texh + !!(j & 2) * char_texh;
-            vert[4 * chars + j].z = 0;
-            vert[4 * chars + j].w = 1;
-            vert[4 * chars + j].color = color;
-        }
-        draw_x += char_w, chars++;
     }
 
     if (index.size() < chars * 6)
