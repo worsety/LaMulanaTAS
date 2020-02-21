@@ -79,7 +79,7 @@ int rounduppo2(int x)
 
 BitmapFont::BitmapFont(IDirect3DDevice9* dev, int w, int h) : dev(dev), char_w(w), char_h(h)
 {
-    int tex_w = rounduppo2(w * 16), tex_h = rounduppo2(h * 8);
+    int tex_w = rounduppo2(w * 16), tex_h = rounduppo2(h * 16);
     char_texw = 1.f * w / tex_w;
     char_texh = 1.f * h / tex_h;
     HR(dev->CreateTexture(tex_w, tex_h, 1, 0, D3DFMT_A8, D3DPOOL_MANAGED, &tex, nullptr));
@@ -97,7 +97,7 @@ BitmapFont::BitmapFont(IDirect3DDevice9* dev, int w, int h, HMODULE mod, int res
     unsigned char *srcline = (unsigned char*)dib.dsBm.bmBits + dib.dsBm.bmWidthBytes * (dib.dsBm.bmHeight - 1);
     unsigned char *dstline = (unsigned char*)rect.pBits;
     const int bpp = dib.dsBm.bmBitsPixel;
-    for (int y = h * 8; --y >= 0; srcline -= dib.dsBm.bmWidthBytes, dstline += rect.Pitch)
+    for (int y = h * 16; --y >= 0; srcline -= dib.dsBm.bmWidthBytes, dstline += rect.Pitch)
         for (int x = 0; x < dib.dsBm.bmWidth; x++)
         {
             if (bpp == 1)
@@ -143,20 +143,22 @@ void BitmapFont::Add(float x, float y, int align, D3DCOLOR color_odd, D3DCOLOR c
     if (align & BMFALIGN_BOTTOM)
         draw_y -= lines.size() * char_h;
     bool odd = true;
-    for (int c : text)
+    D3DCOLOR color = color_odd;
+    for (unsigned char c : text)
     {
         switch (c)
         {
             case '\n':
                 draw_y += char_h, draw_x = x;
                 odd = !odd;
+                color = odd ? color_odd : color_even;
                 if (align & BMFALIGN_RIGHT)
                     draw_x -= char_w * line++->size();
                 continue;
             case ' ':
                 if (skip_spaces)
                 {
-                    draw_x += char_w, chars++;
+                    draw_x += char_w;
                     continue;
                 }
             default:
@@ -168,7 +170,7 @@ void BitmapFont::Add(float x, float y, int align, D3DCOLOR color_odd, D3DCOLOR c
                     vert[4 * chars + j].v = (c >> 4) * char_texh + !!(j & 2) * char_texh;
                     vert[4 * chars + j].z = 0;
                     vert[4 * chars + j].w = 1;
-                    vert[4 * chars + j].color = odd ? color_odd : color_even;
+                    vert[4 * chars + j].color = color;
                 }
                 draw_x += char_w, chars++;
         }

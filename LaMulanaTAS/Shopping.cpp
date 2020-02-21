@@ -70,9 +70,9 @@ void ShoppingOverlay::Draw()
         }
         else
         {
-            text += strprintf("Slot  %c%4d\n", shop->private_int[15] ? cursor->private_int[0] == 1 ? '\x01' : '\x02' : ' ', slot);
+            text += strprintf("Slot  %c%4d\n", shop->private_int[15] ? cursor->private_int[0] == 1 ? '\x81' : '\x82' : ' ', slot);
             text += strprintf("Item %6d\n", shop->private_int[21 + slot]);
-            text += strprintf("Price %c%4d\n", shop->private_int[11 + slot] ? '\x01' : '\x02', shop->private_int[1 + slot]);
+            text += strprintf("Price %c%4d\n", shop->private_int[11 + slot] ? '\x81' : '\x82', shop->private_int[1 + slot]);
             text += strprintf("Flag %6d\n", shop->private_int[7 + slot]);
         }
     objs:
