@@ -53,6 +53,8 @@ TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
     GLE(SystemParametersInfo(SPI_GETKEYBOARDSPEED, 0, &keyboard_speed, 0));
     repeat_delay = 15 + 15 * keyboard_delay;
     repeat_speed = 23 - 7 * keyboard_speed / 10;
+
+    shopping_overlay = new ShoppingOverlay(*this);
 }
 
 void TAS::LoadBindings()

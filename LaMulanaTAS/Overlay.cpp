@@ -21,6 +21,9 @@ static const struct {
 
 void TAS::ProcessKeys()
 {
+    if (extra_overlay)
+        if (!extra_overlay->ProcessKeys())
+            return;
     if (Poll(VK_OEM_6))
     {
         if (pause)
@@ -63,6 +66,8 @@ void TAS::ProcessKeys()
         show_loc = !show_loc;
     if (Poll('G', true))
         hide_game = !hide_game;
+    if (Poll('S', true))
+        extra_overlay = extra_overlay == shopping_overlay ? nullptr : shopping_overlay;
 }
 
 static const RECT unscaled_game{ 0, 0, 640, 480 };
@@ -179,7 +184,7 @@ void TAS::DrawOverlay()
         hv.resize(i + hitboxes.count * 6);
         for (auto &&hitbox : hitboxes)
         {
-            bool has_iframes = memory.iframes_create == hitbox.object->create;
+            bool has_iframes = memory.create_iframes == hitbox.object->create;
             LaMulanaMemory::object &object = has_iframes ? *(LaMulanaMemory::object*)hitbox.object->local_ptr[0] : *hitbox.object;
 #if 0
             font4x6->Add(hitbox.x, hitbox.y - 6.f, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 255, 255),
@@ -190,7 +195,7 @@ void TAS::DrawOverlay()
             case 0:
             case 3:
                 font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_LEFT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 0), strprintf("%d", object.hp));
-                if (memory.pot_create == object.create && object.local_int[0])
+                if (memory.create_pot == object.create && object.local_int[0])
                 {
                     static const char *droptypes[] = { "non", "$$$", "wgt", "shu", "rol", "spr", "flr", "bom", "chk", "ctr", "bul" };
                     int type = object.local_int[0], quant = object.local_int[1];
@@ -198,7 +203,7 @@ void TAS::DrawOverlay()
                     font4x6->Add(hitbox.x, hitbox.y + hitbox.h, 0, D3DCOLOR_ARGB(255, 255, 255, 0), strprintf("%s x%d", typestr.data(), quant));
                 }
                 //font4x6->Add(hitbox.x + hitbox.w, hitbox.y + hitbox.h, BMFALIGN_TOP | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 0, 255, 255), strprintf("%d", object.state));
-                if (memory.mother5_create == object.create)
+                if (memory.create_mother5 == object.create)
                 {
                     font4x6->Add(hitbox.x, hitbox.y + hitbox.h + 6.f, BMFALIGN_TOP | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%d", object.private_int[9]));
                     font4x6->Add(hitbox.x + hitbox.w, hitbox.y + hitbox.h + 6.f, BMFALIGN_TOP | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%d", object.private_int[2]));
@@ -212,7 +217,7 @@ void TAS::DrawOverlay()
                 font4x6->Add(hitbox.x + hitbox.w, hitbox.y, BMFALIGN_RIGHT | BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 255, 0, 0), strprintf("%d", hitbox.damage));
                 break;
             case 12:
-                if (memory.drop_create == object.create)
+                if (memory.create_drop == object.create)
                     font4x6->Add(hitbox.x, hitbox.y, BMFALIGN_BOTTOM, D3DCOLOR_ARGB(255, 0, 255, 255), strprintf("%d", object.local_int[1]));
                 break;
             }
@@ -411,7 +416,7 @@ void TAS::DrawOverlay()
             "Frame %7d @%d%s",
             frame_count, frame, sec == sections.end() ? "" : strprintf(" %s:%d", sec->second.data(), frame - sec->first).data());
 
-        font8x12->Add(10, 470, BMFALIGN_BOTTOM | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
+        font8x12->Add(OVERLAY_LEFT, OVERLAY_BOTTOM, BMFALIGN_BOTTOM | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
 
         text.clear();
 
@@ -480,7 +485,7 @@ void TAS::DrawOverlay()
             for (; currng != memory.rng; rngsteps++)
                 currng = currng * 109 + 1021 & 0x7fff;
         text += strprintf("\n\nRNG [%.6d] %5d", rngsteps, memory.rng);
-        font8x12->Add(630, 470, BMFALIGN_BOTTOM | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
+        font8x12->Add(OVERLAY_RIGHT, OVERLAY_BOTTOM, BMFALIGN_BOTTOM | BMFALIGN_RIGHT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
         font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
         HR(oldstate->Apply());
     }
@@ -492,10 +497,10 @@ void TAS::DrawOverlay()
         {
             static const struct { int idx; float x, y; int align; }
             exits[] = {
-                { 0, 288, 10, BMFALIGN_TOP },
-                { 1, 630, 234, BMFALIGN_RIGHT },
-                { 2, 288, 470, BMFALIGN_BOTTOM },
-                { 3, 10, 234, BMFALIGN_LEFT },
+                { 0, 288, OVERLAY_TOP, BMFALIGN_TOP },
+                { 1, OVERLAY_RIGHT, 234, BMFALIGN_RIGHT },
+                { 2, 288, OVERLAY_BOTTOM, BMFALIGN_BOTTOM },
+                { 3, OVERLAY_LEFT, 234, BMFALIGN_LEFT },
             };
             for (auto i : exits)
             {
@@ -506,5 +511,11 @@ void TAS::DrawOverlay()
             font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
             HR(oldstate->Apply());
         }
+    }
+
+    if (extra_overlay)
+    {
+        extra_overlay->Draw();
+        HR(oldstate->Apply());
     }
 }

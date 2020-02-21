@@ -41,6 +41,9 @@
     <ClCompile Include="TAS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Shopping.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="LaMulanaTAS.def">

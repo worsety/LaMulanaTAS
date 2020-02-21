@@ -103,6 +103,7 @@ COPY /Y "$(SolutionDir)\README.md" "$(SolutionDir)\dist\"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Exports.cpp" />
+    <ClCompile Include="Shopping.cpp" />
     <ClCompile Include="TAS.cpp">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Default</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Default</CompileAs>

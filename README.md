@@ -47,6 +47,7 @@ Shift+Key | Action
 E | Toggle screen exit display
 L | Toggle visual indication of Lemeza's location
 G | Toggle visibility of game graphics
+S | Toggle remote shopping overlay
 
 # Scripting
 

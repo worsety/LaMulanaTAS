@@ -49,9 +49,25 @@ static const WORD XINPUT_DPAD[] = {
     XINPUT_GAMEPAD_DPAD_RIGHT,
 };
 
+#define OVERLAY_LEFT 8
+#define OVERLAY_RIGHT 632
+#define OVERLAY_TOP 42
+#define MAIN_OVERLAY_TOP 426
+#define OVERLAY_BOTTOM 474
+
 class TAS
 {
 public:
+    class Overlay
+    {
+    public:
+        TAS &tas;
+        LaMulanaMemory &memory;
+        Overlay(TAS &tas) : tas(tas), memory(tas.memory) {}
+        virtual bool ProcessKeys() { return true; } // return false to inhibit the main overlay's processing
+        virtual void Draw() {};
+    };
+
     LaMulanaMemory memory;
     int frame, frame_count, rngsteps;
     std::map<int, std::string> sections;
@@ -129,6 +145,8 @@ public:
     bool show_overlay = true, show_exits, show_solids, show_loc, hide_game;
     int show_tiles;
     unsigned show_hitboxes = 1 << 7 | 1 << 9 | 1 << 11;  // unknown types, I want to know if anyone sees them
+    Overlay *shopping_overlay;
+    Overlay *extra_overlay;
 
     TAS(char *base);
     void LoadBindings();
@@ -140,6 +158,13 @@ public:
     void ProcessKeys();
 
     void LoadTAS();
+};
+
+class ShoppingOverlay : public TAS::Overlay
+{
+public:
+    ShoppingOverlay(TAS &tas) : Overlay(tas) {}
+    void Draw() override;
 };
 
 extern HMODULE tasModule;

@@ -56,11 +56,12 @@ public:
             struct byteop *tests;
             int processing_flags;
             char unk278[0x2d8-0x278]; // a bunch of this is somewhat known actually
-            short nextidx, previdx; // used for finding free slots for allocation
+            short alloc_next, alloc_prev; // used for finding free slots for allocation
             short priority;
             int idx;
-            char unk2e4[8]; // actually not unknown at all, sorry
-            object *next, *prev; // used for processing order within a priority
+            int unique_id;
+            char extant;
+            object *queue_next, *queue_prev; // used for processing order within a priority
             char db[3]; // I have specifics but they're wrong
             char zone, room, screen;
             char unk2fa[0x308-0x2fa];
@@ -72,6 +73,21 @@ public:
             // you'd think this means it's for rtti but create is used for that too
             void (*create2)(object*);
         };
+
+        // poorly named, the return value is the offset from the first free object in the allocation queue
+        // implementation is a bit wonky because objects is a non-static member
+        int GetDepth()
+        {
+            auto obj = this;
+            int ret = 0;
+            if (extant)
+                while (obj = &obj[obj->alloc_next - obj->idx], obj->extant)
+                    ret++;
+            else
+                for (; !obj->extant; obj = &obj[obj->alloc_prev - obj->idx])
+                    ret--;
+            return ret;
+        }
     };
     static_assert(offsetof(object, create2) == 0x330, "Error in object structure");
 
@@ -240,17 +256,19 @@ public:
 
     object* (&objects) = *(object**)(base + 0xdb7188);
     void (*(&objtypes)[204])(object*) = *(void (*(*)[204])(object*))(base + 0x6d10b8);
+    short (*&obj_queue)[60] = *(short(**)[60])(base + 0xdb7158);
 
     void (*const kill_objects)() = (void (*)())(base + 0x6072d0);
     void (*const reset_game)() = (void (*)())(base + 0x4d9690);
-    void (*const create_obj_inst_)(void (*create)(object*)) = (void (*)(void (*)(object*)))(base + 0x607570);
+    void (*const obj_create_inst)(void (*create)(object*)) = (void (*)(void (*)(object*)))(base + 0x607570);
     void (**const sleep)(int) = (void (**)(int))(base + 0x6d4f68);
 
-    void (*const iframes_create)(object*) = (void (*)(object*))(base + 0x5feeb0);
-    void (*const startup_create)(object*) = (void (*)(object*))(base + 0x6222f0);
-    void (*const pot_create)(object*) = (void (*)(object*))(base + 0x632470);
-    void (*const drop_create)(object*) = (void (*)(object*))(base + 0x455960);
-    void (*const mother5_create)(object*) = (void (*)(object*))(base + 0x54ea60);
+    void (*const create_iframes)(object*) = (void(*)(object*))(base + 0x5feeb0);
+    void (*const create_startup)(object*) = (void(*)(object*))(base + 0x6222f0);
+    void (*const create_pot)(object*) = (void(*)(object*))(base + 0x632470);
+    void (*const create_drop)(object*) = (void(*)(object*))(base + 0x455960);
+    void (*const create_shop)(object*) = (void(*)(object*))(base + 0x5c1fe0);
+    void (*const create_mother5)(object*) = (void(*)(object*))(base + 0x54ea60);
 
     // This function is empty, I'm literally calling it just to prevent the compiler from assuming it knows what registers are and aren't destroyed wtf
     void (*const noop)() = (void (*)())(base + 0x4f6540);
@@ -422,4 +440,10 @@ public:
             memory->objtypes[type] = orig_create;
         }
     };
+
+    bool IsObjPtr(void *ptr)
+    {
+        int offset = (char*)ptr - (char*)&objects[0];
+        return offset >= 0 && offset < sizeof(object[0x600]) && offset % sizeof(object) == 0;
+    }
 };
