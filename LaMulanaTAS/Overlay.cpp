@@ -470,7 +470,6 @@ void TAS::DrawOverlay()
         disp_key(VK_BACK, "\x82", " ");
         disp_key(VK_RETURN, "\x81", " ");
         disp_key(VK_ESCAPE, "\x82", " ");
-        disp_key(key_binds.cancel, "\x82", " ");
         disp_key(key_binds.jump, "Z", " ");
         disp_key(key_binds.attack, "X", " ");
         disp_key(key_binds.sub, "C", " ");
