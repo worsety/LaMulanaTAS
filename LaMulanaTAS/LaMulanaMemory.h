@@ -446,4 +446,11 @@ public:
         int offset = (char*)ptr - (char*)&objects[0];
         return offset >= 0 && offset < sizeof(object[0x600]) && offset % sizeof(object) == 0;
     }
+
+    std::string GetObjName(object *obj)
+    {
+        if (!obj->create2)
+            return "(null)";
+        return strprintf(obj->create ? "%x" : "(%x)", (char*)obj->create2 - base);
+    }
 };

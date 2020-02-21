@@ -23,9 +23,9 @@ void ShoppingOverlay::Draw()
         next_obj = &shop[1];
 
         std::string text;
-        auto f = [&text] (const char *name, const char *fmt, auto... params)
+        auto f = [&text] (const char *name, auto... params)
         {
-            text += format_field(WIDTH, name, fmt, params...);
+            text += format_field(WIDTH, name, params...);
         };
         switch (shop->local_int[0])
         {
@@ -87,7 +87,7 @@ void ShoppingOverlay::Draw()
         if (memory.IsObjPtr(cursor))
         {
             f("Object", "%d", cursor->idx);
-            f("Type", "%x", (char*)cursor->create - memory.base);
+            f("Type", memory.GetObjName(cursor));
             f("Depth", "%d", cursor->GetDepth());
         }
         else
@@ -98,7 +98,7 @@ void ShoppingOverlay::Draw()
         if (memory.IsObjPtr(text_obj))
         {
             f("Object", "%d", text_obj->idx);
-            f("Type", "%x", (char*)text_obj->create - memory.base);
+            f("Type", memory.GetObjName(text_obj));
             f("Depth", "%d", text_obj->GetDepth());
         }
         else
@@ -109,7 +109,7 @@ void ShoppingOverlay::Draw()
         if (memory.IsObjPtr(next_obj))
         {
             f("Object", "%d", next_obj->idx);
-            f("Type", "%x", (char*)next_obj->create - memory.base);
+            f("Type", memory.GetObjName(next_obj));
             f("Depth", "%d", next_obj->GetDepth());
             f("p[0]", "%d", next_obj->private_int[0]);
             f("p[1]", "%d", next_obj->private_int[1]);

@@ -56,17 +56,23 @@ std::string strprintf(_In_z_ _Printf_format_string_ const char * const fmt, ...)
     return ret;
 }
 
+std::string format_field(int width, const char *name, std::string value)
+{
+    std::string val = " " + value;
+    std::string ret = strprintf("%-*.*s\n", width, width, name);
+    int pos = max(1, width - (int)val.size()),
+        size = width - pos;
+    ret.replace(pos, size, val.c_str(), size);
+    return ret;
+}
+
 std::string format_field(int width, const char *name, _In_z_ _Printf_format_string_ const char * const fmt, ...)
 {
     std::va_list v;
-    std::string ret = strprintf("%-*.*s\n", width, width, name);
     va_start(v, fmt);
-    std::string value = " " + vstrprintf(fmt, v);
+    std::string value = vstrprintf(fmt, v);
     va_end(v);
-    int pos = max(1, width - (int)value.size()),
-        size = width - pos;
-    ret.replace(pos, size, value.c_str(), size);
-    return ret;
+    return format_field(width, name, value);
 }
 
 std::string getwinerror(HRESULT hr)
