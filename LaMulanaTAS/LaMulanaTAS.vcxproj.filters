@@ -21,10 +21,10 @@
     <ClInclude Include="util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LaMulanaMemory.h">
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="Memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

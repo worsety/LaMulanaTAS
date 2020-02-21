@@ -1,7 +1,7 @@
 // This is more documentation than anything else
 #pragma once
 
-#include "LaMulanaMemory.h"
+#include "Memory.h"
 #include <map>
 #include <unordered_set>
 #include <functional>

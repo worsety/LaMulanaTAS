@@ -96,7 +96,7 @@ COPY /Y "$(SolutionDir)\README.md" "$(SolutionDir)\dist\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="LaMulanaMemory.h" />
+    <ClInclude Include="Memory.h" />
     <ClInclude Include="LaMulanaTAS.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="util.h" />
