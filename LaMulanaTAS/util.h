@@ -9,6 +9,7 @@
 
 std::string strprintf(_In_z_ _Printf_format_string_ const char * const fmt, ...);
 std::wstring wstrprintf(_In_z_ _Printf_format_string_ const wchar_t * const fmt, ...);
+std::string format_field(int width, const char *name, _In_z_ _Printf_format_string_ const char * const fmt, ...);
 
 template<typename T> class vararray
 {

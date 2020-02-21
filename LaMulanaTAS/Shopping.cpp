@@ -2,6 +2,8 @@
 #include <string>
 #include <windows.h>
 
+static const int WIDTH = 18;
+
 void ShoppingOverlay::Draw()
 {
     if (memory.obj_queue[27] < 0)
@@ -21,6 +23,10 @@ void ShoppingOverlay::Draw()
         next_obj = &shop[1];
 
         std::string text;
+        auto f = [&text] (const char *name, const char *fmt, auto... params)
+        {
+            text += format_field(WIDTH, name, fmt, params...);
+        };
         switch (shop->local_int[0])
         {
             case 0:
@@ -36,29 +42,29 @@ void ShoppingOverlay::Draw()
                 text += "Unk %d\n"; // I think I saw some code for a type 3, not that any exist in the game?
                 break;
         }
-        text += strprintf("Card %6d\n", shop->local_int[1]);
-        text += strprintf("Object %4d\n", shop->idx);
+        f("Card", "%d", shop->local_int[1]);
+        f("Object", "%d", shop->idx);
         switch (shop->private_int[0])
         {
             case 0:
-                text += "Entering\n\n\n\n";
+                text += "Entering\n\n\n\n\n";
                 goto objs;
             case 1:
-                text += "Chatting\n\n\n\n";
+                text += "Chatting\n\n\n\n\n";
                 goto objs;
             case 2:
-                text += "Left\n\n\n\n";
+                text += "Left\n\n\n\n\n";
                 goto objs;
             case 3:
                 break;
             case 1000:
-                text += "Leaving\n\n\n\n";
+                text += "Leaving\n\n\n\n\n";
             default:
                 goto objs;
         }
         if (shop->private_int[0] != 3)
         {
-            text += "\n\n\n\n";
+            text += "\n\n\n\n\n";
             goto objs;
         }
 
@@ -66,22 +72,23 @@ void ShoppingOverlay::Draw()
         if (IsBadReadPtr(&shop->private_int[1 + slot], 92))
         {
             text += strprintf("0x%8x\n", slot * 4);
-            text += "BAD\n\n\n";
+            text += "BAD\n\n\n\n";
         }
         else
         {
-            text += strprintf("Slot  %c%4d\n", shop->private_int[15] ? cursor->private_int[0] == 1 ? '\x81' : '\x82' : ' ', slot);
-            text += strprintf("Item %6d\n", shop->private_int[21 + slot]);
-            text += strprintf("Price %c%4d\n", shop->private_int[11 + slot] ? '\x81' : '\x82', shop->private_int[1 + slot]);
-            text += strprintf("Flag %6d\n", shop->private_int[7 + slot]);
+            f("Slot", "%c%d", shop->private_int[15] ? cursor->private_int[0] == 1 ? '\x81' : '\x82' : ' ', slot);
+            f("Item", "%d", shop->private_int[21 + slot]);
+            f("Price", "%d", shop->private_int[1 + slot]);
+            f("Flag", "%d", shop->private_int[7 + slot]);
+            text += shop->private_int[11 + slot] ? "In stock\n" : "Out of stock\n";
         }
     objs:
         text += "\nCursor\n";
         if (memory.IsObjPtr(cursor))
         {
-            text += strprintf("Object %4d\n", cursor->idx);
-            text += strprintf("Type %6x\n", (char*)cursor->create - memory.base);
-            text += strprintf("Depth %5d\n", cursor->GetDepth());
+            f("Object", "%d", cursor->idx);
+            f("Type", "%x", (char*)cursor->create - memory.base);
+            f("Depth", "%d", cursor->GetDepth());
         }
         else
         {
@@ -90,9 +97,9 @@ void ShoppingOverlay::Draw()
         text += "\nText\n";
         if (memory.IsObjPtr(text_obj))
         {
-            text += strprintf("Object %4d\n", text_obj->idx);
-            text += strprintf("Type %6x\n", (char*)text_obj->create - memory.base);
-            text += strprintf("Depth %5d\n", text_obj->GetDepth());
+            f("Object", "%d", text_obj->idx);
+            f("Type", "%x", (char*)text_obj->create - memory.base);
+            f("Depth", "%d", text_obj->GetDepth());
         }
         else
         {
@@ -101,18 +108,18 @@ void ShoppingOverlay::Draw()
         text += "\nNext\n";
         if (memory.IsObjPtr(next_obj))
         {
-            text += strprintf("Object %4d\n", next_obj->idx);
-            text += strprintf("Type %6x\n", (char*)next_obj->create - memory.base);
-            text += strprintf("Depth %5d\n", next_obj->GetDepth());
-            text += strprintf("p[0] %6d\n", next_obj->private_int[0]);
-            text += strprintf("p[1] %6d\n", next_obj->private_int[1]);
+            f("Object", "%d", next_obj->idx);
+            f("Type", "%x", (char*)next_obj->create - memory.base);
+            f("Depth", "%d", next_obj->GetDepth());
+            f("p[0]", "%d", next_obj->private_int[0]);
+            f("p[1]", "%d", next_obj->private_int[1]);
         }
         else
         {
             text += "BAD\n\n\n";
         }
-        font8x12->Add(x, y, BMFALIGN_LEFT | BMFALIGN_TOP, D3DCOLOR_ARGB(255, 255, 255, 255), text);
-        x += 8 * 13;
+        font8x12->Add(x, y, BMFALIGN_LEFT | BMFALIGN_TOP, D3DCOLOR_ARGB(255, 255, 255, 255), D3DCOLOR_ARGB(255, 191, 191, 191), text);
+        x += 8 * (WIDTH + 2);
     }
-    font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
+    font8x12->Draw(D3DCOLOR_ARGB(192, 0, 0, 0));
 }

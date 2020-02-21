@@ -7,42 +7,66 @@
 #if _MSC_VER < 1900
 #error Visual C++ 2015 required for compliant vsnprintf
 #endif
-std::string strprintf(_In_z_ _Printf_format_string_ const char * const fmt, ...)
+
+static std::string vstrprintf(_In_z_ _Printf_format_string_ const char * const fmt, std::va_list v)
 {
     std::vector<char> buf(64);
-    std::va_list v;
-    va_start(v, fmt);
     int len = std::vsnprintf(&buf[0], buf.size() - 1, fmt, v);
-    va_end(v);
     if (len + 1 > (int)buf.size())
     {
         buf.resize(len + 1);
-        va_start(v, fmt);
         len = std::vsnprintf(&buf[0], buf.size(), fmt, v);
-        va_end(v);
     }
     if (len < 0)
         throw std::runtime_error("vsnprintf failed");
     return std::string(&buf[0], len);
 }
 
-std::wstring wstrprintf(_In_z_ _Printf_format_string_ const wchar_t * const fmt, ...)
+static std::wstring vwstrprintf(_In_z_ _Printf_format_string_ const wchar_t * const fmt, std::va_list v)
 {
     std::vector<wchar_t> buf(64);
-    std::va_list v;
-    va_start(v, fmt);
     int len = std::vswprintf(&buf[0], buf.size() - 1, fmt, v);
-    va_end(v);
     if (len + 1 >(int)buf.size())
     {
         buf.resize(len + 1);
-        va_start(v, fmt);
         len = std::vswprintf(&buf[0], buf.size(), fmt, v);
-        va_end(v);
     }
     if (len < 0)
         throw std::runtime_error("vsnprintf failed");
     return std::wstring(&buf[0], len);
+}
+
+std::wstring wstrprintf(_In_z_ _Printf_format_string_ const wchar_t * const fmt, ...)
+{
+    std::va_list v;
+    std::wstring ret;
+    va_start(v, fmt);
+    ret = vwstrprintf(fmt, v);
+    va_end(v);
+    return ret;
+}
+
+std::string strprintf(_In_z_ _Printf_format_string_ const char * const fmt, ...)
+{
+    std::va_list v;
+    std::string ret;
+    va_start(v, fmt);
+    ret = vstrprintf(fmt, v);
+    va_end(v);
+    return ret;
+}
+
+std::string format_field(int width, const char *name, _In_z_ _Printf_format_string_ const char * const fmt, ...)
+{
+    std::va_list v;
+    std::string ret = strprintf("%-*.*s\n", width, width, name);
+    va_start(v, fmt);
+    std::string value = " " + vstrprintf(fmt, v);
+    va_end(v);
+    int pos = max(1, width - (int)value.size()),
+        size = width - pos;
+    ret.replace(pos, size, value.c_str(), size);
+    return ret;
 }
 
 std::string getwinerror(HRESULT hr)
