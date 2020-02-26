@@ -9,6 +9,5 @@ Enhancements:
     Jump preview?
 Better uninitialised data hooking: afaics, every object is created through obj_add or obj_add_instantiate, so mod those to set obj->create to an imported function which does its own stuff then obj->create = obj->create2; / *always set to create, purpose unknown */ return obj->create();
     Accurate scrolling collision overlay (optional because it's ugly)
-    #if #endif like syntax to completely disable parsing part of the script
 Bugs:
     Why does resetting in game after remote shopping desync shops by one frame if you then TAS reset?

@@ -169,6 +169,16 @@ void TAS::LoadTAS()
     objfixups.clear();
 
     std::map<std::string, int> marks;
+    std::unordered_set<std::string> use;
+    int if_true_depth = 0, if_false_depth = 0;
+
+    auto err = [&linenum](const std::string s, auto... params)
+    {
+        if (sizeof...(params))
+            throw parsing_exception(strprintf((s + " [%d]").data(), params..., linenum));
+        else
+            throw parsing_exception(strprintf("%s [%d]", s.data(), linenum));
+    };
 
     std::regex
         re_atframe("@([0-9]+)"),
@@ -193,6 +203,32 @@ void TAS::LoadTAS()
             std::istringstream is(line);
             while (is >> token)
             {
+                if (token == "!use" || token == "!if")
+                {
+                    std::string s;
+                    if (!(is >> s))
+                        err(token + " must be followed by a name");
+                    if (token == "!use")
+                        use.insert(s);
+                    else // !if
+                        if (if_false_depth > 0 || 0 == use.count(s))
+                            if_false_depth++;
+                        else
+                            if_true_depth++;
+                    continue;
+                }
+                if (token == "!endif")
+                {
+                    if (if_false_depth > 0)
+                        if_false_depth--;
+                    else if (if_true_depth > 0)
+                        if_true_depth--;
+                    else
+                        err("Unmatched !endif");
+                    continue;
+                }
+                if (if_false_depth > 0)
+                    continue;
                 std::smatch m;
                 if (std::regex_match(token, m, re_atframe))
                 {
@@ -219,7 +255,7 @@ void TAS::LoadTAS()
                     }
                     catch (std::out_of_range&)
                     {
-                        throw parsing_exception(strprintf("Undefined mark '%s' on line %d", m[1].str().data(), linenum));
+                        err("Undefined mark '%s'", m[1].str().data());
                     }
                     continue;
                 }
@@ -257,7 +293,7 @@ void TAS::LoadTAS()
                         }
                         catch (std::out_of_range&)
                         {
-                            throw parsing_exception(strprintf("Unknown input '%s' on line %d", input.data(), linenum));
+                            err("Unknown input '%s'", input.data());
                         }
 
                         auto &frame_inputs = is_btn ? frame_btns : frame_keys;
@@ -324,9 +360,9 @@ void TAS::LoadTAS()
                     if (m[1] == "obj")
                     {
                         if (type >= 204)
-                            throw parsing_exception(strprintf("Object fixup type %x out of bounds on line %d", type, linenum));
+                            err("Object fixup type %x out of bounds", type);
                         if (off >= sizeof(LaMulanaMemory::object))
-                            throw parsing_exception(strprintf("Object fixup offset %x out of bounds on line %d", off, linenum));
+                            err("Object fixup offset %x out of bounds", off);
                         if (!has_reset)
                             continue;
                         frame_actions.emplace(curframe, std::list<std::function<void()>>());
@@ -339,7 +375,7 @@ void TAS::LoadTAS()
                         });
                     }
                     else
-                        throw parsing_exception(strprintf("Unrecognised fixup type '%s' on line %d", m[1].str().data(), linenum));
+                        err("Unrecognised fixup type '%s'", m[1].str().data());
                     continue;
                 }
                 if ("break" == token)
@@ -348,7 +384,7 @@ void TAS::LoadTAS()
                     frame_actions.find(curframe)->second.push_back([this]() { pause = true; });
                     continue;
                 }
-                throw parsing_exception(strprintf("Unrecognised expression '%s' on line %d", token.data(), linenum));
+                err("Unrecognised expression '%s'", token.data());
             }
         }
     }
