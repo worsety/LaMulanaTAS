@@ -1,1 +1,113 @@
-# Sample script goes here
+# This is a comment
+# Don't actually use this as the start of a full game script, it's simplified
+
+# Every script should start by seeding the prng
+# This is equivalent to starting the game at a specific wall clock time
+rng=14
+# You can also simulate rng steps with rng+x, rng-x or rng=seed+x, rng=seed-x
+# A final script must only set rng once at the start of the script obviously
+
+# All actions and inputs are for specific frame numbers
+@1 # This is an absolute frame reference
+
+                introseq:: # This is a label, the :: makes the overlay display it
+
+# Keyboard inputs:
+# up down left right (hardcoded)
+# jump main sub item
+# +m -m +s -s +menu -menu (main weapon, subweapon and menu switching)
+# pause
+# msx (cannot be rebound in game but is technically configurable, default ESC)
+# ok cancel
+# ok2/space ok3/return cancel2/bksp cancel3/esc (hardcoded)
+# f2 f3 f4 f5 f6 f7 f8 f9 (hardcoded)
+
+# Pad inputs:
+# p-up p-down p-left p-right
+# p-jump p-main p-sub p-item
+# p+m p-m p+s p-s p+menu p-menu
+# p-ok p-cancel
+# p-pause p-msx
+
+# Inputs are given by <number of frames to hold>=input1,...
+                                1=jump
+# Funnily enough, ok and cancel wouldn't work there with custom bindings
+# The game doesn't consider them to be "any button" for the intro sequence
+
+# These are relative frame references
++2                              1=jump
++2                              1=ok
+
+# This is a label relative frame reference
+introseq:551    start::
+
+# If you omit the frame count to hold inputs, it's until overridden
+                                =right
+
+                        +4      2=jump
+                        +3      1=main
+
+# ^input means release for the specified number of frames
+# Here this is used to face left for 1 frame while jumping right to spin whip
+                        +11     1=left,^right
+                        +2      1=left,^right
+                        +2      =left,^right
+start:88                        =^left
+
+start:132
+
+# You can turn parts of the script on and off, try commenting out this !use
+!use malware
+!if malware
+
+# This label only has a single : so it won't show on the overlay
+                xelpud:         1=up
+# xelpud:73 is the first frame in the tent, 36 frames later you can start mashing
+# TAS can mash at 60Hz, it's really fast!
+xelpud:109                      1=ok +1 1=ok2
+                        +1      1=ok +1 1=ok2
+                        +1      1=ok +1 1=ok2
+# You can alternate pad and keyboard inputs at 60Hz too!
+# This works in the unmodified game, try to double jump as low as you can
+# Note however that any frame there are pad inputs, keyboard will be ignored
+                        +1      1=p-ok +1 1=ok2
+                        +1      1=ok +1 1=ok2
+                        +1      1=ok +1 1=ok2
+                        +1      1=ok +1 1=ok2
+                        +1      1=ok +1 1=ok2
+                        +1      1=ok +1 1=ok2
+                        +9      1=ok
+                        +10     1=ok +1 1=ok2
+                        +1      1=ok +1 1=ok2
+                        +1      1=down
++62
+!endif
+
+                enter::
+                                =right
+enter:67                        9=jump
+enter:240                       11=jump
+                        +2      1=left,^right
+enter:304                       2=jump =^right
+
+# Deep dives are easy if you're TAS
+                                +13 2=jump +1 1=left +1 1=right
+
+                                +11 2=jump
+                                +13 2=jump
+                                +13 2=jump
+                                +13 2=jump
+                                +63 2=jump
+                                +13 2=jump
+                                +15 =right
+enter:524                       3=jump
+enter:804                       11=jump
+enter:904                       30=jump
+enter:957                       =^right
+enter:1006      guidance::
+
+# This command switches to frame advance mode automatically
+# Use it to step over problematic parts of your script
+break
+
+# Good luck!
