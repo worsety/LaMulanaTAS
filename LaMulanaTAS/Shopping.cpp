@@ -113,6 +113,9 @@ void ShoppingOverlay::Draw()
             f("Depth", "%d", next_obj->GetDepth());
             f("p[0]", "%d", next_obj->private_int[0]);
             f("p[1]", "%d", next_obj->private_int[1]);
+            f("p[2]", "%d", next_obj->private_int[2]);
+            f("p[3]", "%d", next_obj->private_int[3]);
+            f("p[4]", "%d", next_obj->private_int[4]);
         }
         else
         {
