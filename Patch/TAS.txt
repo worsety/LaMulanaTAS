@@ -39,3 +39,4 @@ Known bugs that affect TASing:
 Tai Sui's eyes reference the member at offset E8 in Tai Sui on creation... which is before Tai Sui initialises this member so they get the value from whatever last occupied that memory and set it.
 Chests use uninitialised memory, haven't analysed how but it affects when they open.
 Ghost Lord uses uninitialised memory.
+0x53ae40 uses uninitialised memory.

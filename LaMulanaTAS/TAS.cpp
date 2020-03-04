@@ -170,7 +170,7 @@ void TAS::LoadTAS()
 
     std::map<std::string, int> marks;
     std::unordered_set<std::string> use;
-    int if_true_depth = 0, if_false_depth = 0;
+    int true_depth = 0, false_depth = 0;
 
     auto err = [&linenum](const std::string s, auto... params)
     {
@@ -208,26 +208,38 @@ void TAS::LoadTAS()
                     std::string s;
                     if (!(is >> s))
                         err(token + " must be followed by a name");
-                    if (token == "!use")
+                    if (token == "!use" && 0 == false_depth)
                         use.insert(s);
-                    else // !if
-                        if (if_false_depth > 0 || 0 == use.count(s))
-                            if_false_depth++;
+                    else if (token == "!if")
+                        if (false_depth > 0 || 0 == use.count(s))
+                            false_depth++;
                         else
-                            if_true_depth++;
+                            true_depth++;
+                    continue;
+                }
+                if (token == "!else")
+                {
+                    if (false_depth > 1)
+                        ;
+                    else if (1 == false_depth)
+                        false_depth--, true_depth++;
+                    else if (true_depth > 0)
+                        true_depth--, false_depth++;
+                    else
+                        err("Unmatched !else");
                     continue;
                 }
                 if (token == "!endif")
                 {
-                    if (if_false_depth > 0)
-                        if_false_depth--;
-                    else if (if_true_depth > 0)
-                        if_true_depth--;
+                    if (false_depth > 0)
+                        false_depth--;
+                    else if (true_depth > 0)
+                        true_depth--;
                     else
                         err("Unmatched !endif");
                     continue;
                 }
-                if (if_false_depth > 0)
+                if (false_depth > 0)
                     continue;
                 std::smatch m;
                 if (std::regex_match(token, m, re_atframe))
