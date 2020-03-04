@@ -444,6 +444,7 @@ void TAS::IncFrame()
 {
     if (!initialised)
     {
+        memory.LoadObjNames();
         LoadTAS();
         initialised = true;
     }

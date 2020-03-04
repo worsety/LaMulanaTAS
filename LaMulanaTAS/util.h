@@ -36,6 +36,8 @@ HRESULT hrcheck(HRESULT hr, const char *file, int line, const char *code);
 #define HR(x) (hrcheck((x), __FILE__, __LINE__, #x))
 #endif
 
+char *read_file_or_res(const char *name, LPCTSTR res, LPCTSTR type, size_t *size);
+
 using unique_handle = std::unique_ptr < std::remove_pointer<HANDLE>::type, decltype(&::CloseHandle)>;
 using shared_handle = std::shared_ptr < std::remove_pointer<HANDLE>::type>;
 
@@ -59,7 +61,7 @@ struct xyzrhwdiffuv
 class BitmapFont
 {
 public:
-    BitmapFont(IDirect3DDevice9* dev, int w, int h, HMODULE mod, int res);
+    BitmapFont(IDirect3DDevice9* dev, int w, int h, HMODULE mod, LPCTSTR res);
     void Add(float x, float y, int align, D3DCOLOR color, D3DCOLOR color2, const std::string &text, bool skip_spaces = true);
     void Add(float x, float y, int align, D3DCOLOR color, const std::string &text, bool skip_spaces = true)
     {

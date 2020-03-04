@@ -1,5 +1,7 @@
 #pragma once
 #include "util.h"
+#include "resource.h"
+#include <map>
 #include "d3d9.h"
 #include "xinput.h"
 
@@ -447,10 +449,43 @@ public:
         return offset >= 0 && offset < sizeof(object[0x600]) && offset % sizeof(object) == 0;
     }
 
+    std::map<void(*)(object*), std::string> obj_names;
+
+    void LoadObjNames()
+    {
+        size_t size;
+        char *text = read_file_or_res("objects.txt", MAKEINTRESOURCE(ID_OBJECTS), MAKEINTRESOURCE(RT_RAW), &size);
+        unsigned int n;
+        char name[21];
+        void(*ptr)(object*);
+        int read;
+
+        for (char *p = text; 2 == sscanf_s(p, "%x%20s%n", &n, name, sizeof name, &read); p += read)
+        {
+            if (n < sizeof objtypes / sizeof *objtypes)
+                ptr = objtypes[n];
+            else
+                ptr = (void(*)(object*))(base + n);
+            obj_names.emplace(ptr, name);
+        }
+
+        free(text);
+
+        for (int i = 0; i < sizeof objtypes / sizeof *objtypes; i++)
+            if (!obj_names.count(objtypes[i]))
+                obj_names[objtypes[i]] = strprintf("rcd%02x", i);
+
+    }
+
     std::string GetObjName(object *obj)
     {
         if (!obj->create2)
             return "(null)";
-        return strprintf(obj->create ? "%x" : "(%x)", (char*)obj->create2 - base);
+        std::string ret;
+        if (obj_names.count(obj->create2))
+            ret = obj_names.at(obj->create2);
+        else
+            ret = strprintf("%x", (char*)obj->create2 - base);
+        return obj->create ? ret : strprintf("(%s)", ret.data());
     }
 };

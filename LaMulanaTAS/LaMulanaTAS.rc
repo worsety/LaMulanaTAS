@@ -2,3 +2,4 @@
 
 IDB_TOMTHUMB            BITMAP                  "tomthumb.bmp"
 IDB_SMALLFONT           BITMAP                  "smallfont.bmp"
+ID_OBJECTS             RT_RAW                  objects.txt

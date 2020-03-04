@@ -137,9 +137,9 @@ void TAS::DrawOverlay()
     HR(dev->CreateStateBlock(D3DSBT_ALL, &oldstate));
 
     if (!font4x6)
-        font4x6.reset(new BitmapFont(dev, 4, 6, tasModule, IDB_TOMTHUMB));
+        font4x6.reset(new BitmapFont(dev, 4, 6, tasModule, MAKEINTRESOURCE(IDB_TOMTHUMB)));
     if (!font8x12)
-        font8x12.reset(new BitmapFont(dev, 8, 12, tasModule, IDB_SMALLFONT));
+        font8x12.reset(new BitmapFont(dev, 8, 12, tasModule, MAKEINTRESOURCE(IDB_SMALLFONT)));
     if (!hit_parts.tex)
     {
         LaMulanaMemory::texture tex;

@@ -1,4 +1,5 @@
 #include "util.h"
+#include "LaMulanaTAS.h"
 #include <cstdarg>
 #include <cwchar>
 #include <algorithm>
@@ -107,6 +108,42 @@ int rounduppo2(int x)
     return x + 1;
 }
 
+char *read_file_or_res(const char *name, LPCTSTR resName, LPCTSTR type, size_t *size)
+{
+    FILE *f;
+    if (!fopen_s(&f, name, "rb"))
+    {
+        fseek(f, 0, SEEK_END);
+        *size = ftell(f);
+        char *ret = (char*)malloc(*size + 1);
+        ret[*size] = 0;
+        if (ret)
+        {
+            char *p = ret;
+            fseek(f, 0, SEEK_SET);
+            while (auto read = fread(p, 1, *size, f))
+                p += read, size -= read;
+        }
+        fclose(f);
+        return ret;
+    }
+
+    auto resource = FindResource(tasModule, resName, type);
+    if (resource)
+    {
+        auto handle = LoadResource(tasModule, resource);
+        *size = SizeofResource(tasModule, resource);
+        GLE(handle);
+        void *data = LockResource(handle);
+        char *ret = (char*)malloc(*size + 1);
+        if (!ret)
+            return nullptr;
+        ret[*size] = 0;
+        memcpy(ret, data, *size);
+        return ret;
+    }
+}
+
 BitmapFont::BitmapFont(IDirect3DDevice9* dev, int w, int h) : dev(dev), char_w(w), char_h(h)
 {
     int tex_w = rounduppo2(w * 16), tex_h = rounduppo2(h * 16);
@@ -115,10 +152,10 @@ BitmapFont::BitmapFont(IDirect3DDevice9* dev, int w, int h) : dev(dev), char_w(w
     HR(dev->CreateTexture(tex_w, tex_h, 1, 0, D3DFMT_A8, D3DPOOL_MANAGED, &tex, nullptr));
 }
 
-BitmapFont::BitmapFont(IDirect3DDevice9* dev, int w, int h, HMODULE mod, int res) : BitmapFont(dev, w, h)
+BitmapFont::BitmapFont(IDirect3DDevice9* dev, int w, int h, HMODULE mod, LPCTSTR res) : BitmapFont(dev, w, h)
 {
     DIBSECTION dib;
-    unique_handle bmp(::LoadImage(mod, MAKEINTRESOURCE(res), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION), ::DeleteObject);
+    unique_handle bmp(::LoadImage(mod, res, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION), ::DeleteObject);
     GLE(bmp);
     GLE(::GetObject(bmp.get(), sizeof dib, &dib));
 

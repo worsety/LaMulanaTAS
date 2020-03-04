@@ -1,0 +1,4 @@
+0	pot
+1	myrmecoleon
+51a8c0	msxmenu
+5c5c30	shopcuritem
