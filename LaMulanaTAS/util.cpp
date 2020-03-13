@@ -142,6 +142,7 @@ char *read_file_or_res(const char *name, LPCTSTR resName, LPCTSTR type, size_t *
         memcpy(ret, data, *size);
         return ret;
     }
+    return nullptr;
 }
 
 BitmapFont::BitmapFont(IDirect3DDevice9* dev, int w, int h) : dev(dev), char_w(w), char_h(h)

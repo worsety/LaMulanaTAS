@@ -9,5 +9,7 @@ Enhancements:
     Jump preview?
 Better uninitialised data hooking: afaics, every object is created through obj_add or obj_add_instantiate, so mod those to set obj->create to an imported function which does its own stuff then obj->create = obj->create2; / *always set to create, purpose unknown */ return obj->create();
     Accurate scrolling collision overlay (optional because it's ugly)
+    Preview of screen (1/10 collision map?) for exits display
+    Also set boot rng when we first set rng.  Time attack rng can be set at @0 like anything else then
 Bugs:
     Why does resetting in game after remote shopping desync shops by one frame if you then TAS reset?

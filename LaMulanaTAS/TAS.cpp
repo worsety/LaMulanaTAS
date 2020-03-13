@@ -324,31 +324,27 @@ void TAS::LoadTAS()
                 }
                 if (std::regex_match(token, m, re_goto))
                 {
-                    frame_actions.emplace(curframe, std::list<std::function<void()>>());
                     int gotoframe = std::stoi(m[1]);
-                    frame_actions.find(curframe)->second.push_back([this, gotoframe]() { frame = gotoframe; });
+                    frame_actions.emplace(curframe, 0).first->second.push_back([this, gotoframe]() { frame = gotoframe; });
                     continue;
                 }
                 if (std::regex_match(token, m, re_load))
                 {
-                    frame_actions.emplace(curframe, std::list<std::function<void()>>());
                     int slot = std::stoi(m[1]);
-                    frame_actions.find(curframe)->second.push_back([this, slot]() { memory.loadslot(slot); });
+                    frame_actions.emplace(curframe, 0).first->second.push_back([this, slot]() { memory.loadslot(slot); });
                     continue;
                 }
                 if (std::regex_match(token, m, re_save))
                 {
-                    frame_actions.emplace(curframe, std::list<std::function<void()>>());
                     int slot = std::stoi(m[1]);
-                    frame_actions.find(curframe)->second.push_back([this, slot]() { memory.saveslot(slot); });
+                    frame_actions.emplace(curframe, 0).first->second.push_back([this, slot]() { memory.saveslot(slot); });
                     continue;
                 }
                 if (std::regex_match(token, m, re_rng))
                 {
-                    frame_actions.emplace(curframe, std::list<std::function<void()>>());
                     int seed = m[1].length() ? std::stoi(m[2]) : -1;
                     int stepcount = m[3].length() ? std::stoi(m[3]) : 0;
-                    frame_actions.find(curframe)->second.push_back([this, seed, stepcount]() {
+                    frame_actions.emplace(curframe, 0).first->second.push_back([this, seed, stepcount]() {
                         int rng = seed >= 0 ? seed : memory.rng, steps = stepcount;
                         for (; steps > 0; --steps)
                             rng = rng * 109 + 1021 & 0x7fff;
@@ -377,12 +373,10 @@ void TAS::LoadTAS()
                             err("Object fixup offset %x out of bounds", off);
                         if (!has_reset)
                             continue;
-                        frame_actions.emplace(curframe, std::list<std::function<void()>>());
-                        frame_actions.find(curframe)->second.push_back([&fixup = *--objfixups.end()]() {
+                        frame_actions.emplace(curframe, 0).first->second.push_back([&fixup = *--objfixups.end()]() {
                             fixup.inject();
                         });
-                        frame_actions.emplace(curframe + 1, std::list<std::function<void()>>());
-                        frame_actions.find(curframe + 1)->second.push_back([&fixup = *--objfixups.end()]() {
+                        frame_actions.emplace(curframe + 1, 0).first->second.push_back([&fixup = *--objfixups.end()]() {
                             fixup.remove();
                         });
                     }
@@ -392,8 +386,7 @@ void TAS::LoadTAS()
                 }
                 if ("break" == token)
                 {
-                    frame_actions.emplace(curframe, std::list<std::function<void()>>());
-                    frame_actions.find(curframe)->second.push_back([this]() { pause = true; });
+                    frame_actions.emplace(curframe, 0).first->second.push_back([this]() { pause = true; });
                     continue;
                 }
                 err("Unrecognised expression '%s'", token.data());
