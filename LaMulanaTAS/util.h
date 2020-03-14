@@ -11,6 +11,11 @@ std::string strprintf(_In_z_ _Printf_format_string_ const char * const fmt, ...)
 std::wstring wstrprintf(_In_z_ _Printf_format_string_ const wchar_t * const fmt, ...);
 std::string format_field(int width, const char *name, const std::string value);
 std::string format_field(int width, const char *name, _In_z_ _Printf_format_string_ const char * const fmt, ...);
+static std::string hexfloat(float &f)
+{
+    unsigned x = *(unsigned*)&f;
+    return strprintf("%02x%c%06x", x >> 23 & 255, x >> 31 ? '-' : '+', x & 0x7fffff);
+}
 
 template<typename T> class vararray
 {
