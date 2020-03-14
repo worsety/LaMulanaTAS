@@ -18,8 +18,8 @@ void ShoppingOverlay::Draw()
         ++shop_no;
 
         LaMulanaMemory::object *cursor, *text_obj, *next_obj;
-        cursor = (LaMulanaMemory::object*)shop->local_ptr[1];
-        text_obj = (LaMulanaMemory::object*)shop->local_ptr[2];
+        cursor = (LaMulanaMemory::object*)shop->arg_ptr[1];
+        text_obj = (LaMulanaMemory::object*)shop->arg_ptr[2];
         next_obj = &shop[1];
 
         std::string text;
@@ -27,7 +27,7 @@ void ShoppingOverlay::Draw()
         {
             text += format_field(WIDTH, name, params...);
         };
-        switch (shop->local_int[0])
+        switch (shop->arg_int[0])
         {
             case 0:
                 text += "Dialogue\n";
@@ -42,9 +42,9 @@ void ShoppingOverlay::Draw()
                 text += "Unk %d\n"; // I think I saw some code for a type 3, not that any exist in the game?
                 break;
         }
-        f("Card", "%d", shop->local_int[1]);
+        f("Card", "%d", shop->arg_int[1]);
         f("Object", "%d", shop->idx);
-        switch (shop->private_int[0])
+        switch (shop->local[0])
         {
             case 0:
                 text += "Entering\n\n\n\n\n";
@@ -62,25 +62,25 @@ void ShoppingOverlay::Draw()
             default:
                 goto objs;
         }
-        if (shop->private_int[0] != 3)
+        if (shop->local[0] != 3)
         {
             text += "\n\n\n\n\n";
             goto objs;
         }
 
-        int slot = shop->private_int[15] == 0 ? cursor->private_int[0] : shop->private_int[14];
-        if (IsBadReadPtr(&shop->private_int[1 + slot], 92))
+        int slot = shop->local[15] == 0 ? cursor->local[0] : shop->local[14];
+        if (IsBadReadPtr(&shop->local[1 + slot], 92))
         {
             text += strprintf("0x%8x\n", slot * 4);
             text += "BAD\n\n\n\n";
         }
         else
         {
-            f("Slot", "%c%d", shop->private_int[15] ? cursor->private_int[0] == 1 ? '\x81' : '\x82' : ' ', slot);
-            f("Item", "%d", shop->private_int[21 + slot]);
-            f("Price", "%d", shop->private_int[1 + slot]);
-            f("Flag", "%d", shop->private_int[7 + slot]);
-            text += shop->private_int[11 + slot] ? "In stock\n" : "Out of stock\n";
+            f("Slot", "%c%d", shop->local[15] ? cursor->local[0] == 1 ? '\x81' : '\x82' : ' ', slot);
+            f("Item", "%d", shop->local[21 + slot]);
+            f("Price", "%d", shop->local[1 + slot]);
+            f("Flag", "%d", shop->local[7 + slot]);
+            text += shop->local[11 + slot] ? "In stock\n" : "Out of stock\n";
         }
     objs:
         text += "\nCursor\n";
@@ -111,11 +111,11 @@ void ShoppingOverlay::Draw()
             f("Object", "%d", next_obj->idx);
             f("Type", memory.GetObjName(next_obj));
             f("Depth", "%d", next_obj->GetDepth());
-            f("p[0]", "%d", next_obj->private_int[0]);
-            f("p[1]", "%d", next_obj->private_int[1]);
-            f("p[2]", "%d", next_obj->private_int[2]);
-            f("p[3]", "%d", next_obj->private_int[3]);
-            f("p[4]", "%d", next_obj->private_int[4]);
+            f("p[0]", "%d", next_obj->local[0]);
+            f("p[1]", "%d", next_obj->local[1]);
+            f("p[2]", "%d", next_obj->local[2]);
+            f("p[3]", "%d", next_obj->local[3]);
+            f("p[4]", "%d", next_obj->local[4]);
         }
         else
         {

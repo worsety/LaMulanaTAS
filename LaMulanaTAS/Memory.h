@@ -38,10 +38,10 @@ public:
             int state;
             // although I'm calling them locals, there is other private storage in objects
             // arguments passed at construction time go into these three arrays
-            int local_int[32];
-            void *local_ptr[16];
-            int private_int[32]; // no arguments, pure local storage
-            float local_float[32];
+            int arg_int[32];
+            void *arg_ptr[16];
+            int local[32]; // no arguments, pure local storage
+            float arg_float[32];
             float x, y, z; // usually screen coordinates
             // I think only lemeza and moving platforms even implement these, also why is there a prev_z?
             float prev_x, prev_y, prev_z;
@@ -341,9 +341,9 @@ public:
     void loadslot(int slot)
     {
         static object fakeloadmenu;
-        fakeloadmenu.private_int[10] = 1;
-        fakeloadmenu.private_int[5] = slot / 5;
-        fakeloadmenu.private_int[0] = slot % 5;
+        fakeloadmenu.local[10] = 1;
+        fakeloadmenu.local[5] = slot / 5;
+        fakeloadmenu.local[0] = slot % 5;
         kill_objects(); // clears objects
         ((void (*)(object*))(base + 0x44aa30))(&fakeloadmenu); // loads save, intended to be called from menu code but it only references these three fields 
     }

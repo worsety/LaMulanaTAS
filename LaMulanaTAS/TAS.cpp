@@ -55,6 +55,7 @@ TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
     repeat_speed = 23 - 7 * keyboard_speed / 10;
 
     shopping_overlay = new ShoppingOverlay(*this);
+    object_viewer = new ObjectViewer(*this);
 }
 
 unsigned char hardcoded_bindings[] = {
