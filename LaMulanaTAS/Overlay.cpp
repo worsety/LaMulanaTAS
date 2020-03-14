@@ -406,13 +406,14 @@ void TAS::DrawOverlay()
             int align, remainder;
             if (3.f == lemeza.local_float[6])
             {
-                align = (int)(lemeza.x + 0.5) % 3;
-                remainder = (int)(0x10'0000 * ((double)lemeza.x - (int)(lemeza.x + 0.5)));
+                int a = (int)round(lemeza.x * 10);
+                align = (a % 3 + 3) % 3;
+                remainder = (int)(0x100'0000 * ((double)lemeza.x - a / 10.));
             }
             else
             {
-                int a = (int)(lemeza.x * 25 + 0.5);
-                align = a % 6;
+                int a = (int)round(lemeza.x * 25);
+                align = (a % 6 + 6) % 6;
                 remainder = (int)(0x200'0000 * ((double)lemeza.x - a / 25.));
             }
             text += strprintf("Align %d%c%05x\n", align, remainder < 0 ? '-' : '+', abs(remainder));
