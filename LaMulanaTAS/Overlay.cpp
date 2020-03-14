@@ -403,9 +403,22 @@ void TAS::DrawOverlay()
         if (memory.lemeza_spawned)
         {
             LaMulanaMemory::object &lemeza = *memory.lemeza_obj;
+            int align, remainder;
+            if (3.f == lemeza.local_float[6])
+            {
+                align = (int)(lemeza.x + 0.5) % 3;
+                remainder = (int)(0x10'0000 * ((double)lemeza.x - (int)(lemeza.x + 0.5)));
+            }
+            else
+            {
+                int a = (int)(lemeza.x * 25 + 0.5);
+                align = a % 6;
+                remainder = (int)(0x200'0000 * ((double)lemeza.x - a / 25.));
+            }
+            text += strprintf("Align %d%c%05x\n", align, remainder < 0 ? '-' : '+', abs(remainder));
             text += strprintf(
-                "X:%12.8f %.8x Y:%12.8f %.8x\n",
-                lemeza.x, *(unsigned*)&lemeza.x, lemeza.y, *(unsigned*)&lemeza.y);
+                "X:%12.8f %s Y:%12.8f %s\n",
+                lemeza.x, hexfloat(lemeza.x).data(), lemeza.y, hexfloat(lemeza.y).data());
         }
         else
             text += '\n';
