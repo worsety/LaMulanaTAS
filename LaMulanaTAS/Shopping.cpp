@@ -11,7 +11,7 @@ void ShoppingOverlay::Draw()
     int shop_no = 0;
     auto &font8x12 = tas.font8x12;
     float x = OVERLAY_LEFT, y = OVERLAY_TOP;
-    for (auto *shop = &memory.objects[(*memory.obj_queue)[27]]; shop; shop = shop->queue_next)
+    for (auto *shop = &memory.objects[(*memory.obj_queue)[27]]; memory.AsObjPtr(shop); shop = shop->queue_next)
     {
         if (shop->create != memory.create_shop)
             continue;
@@ -84,7 +84,7 @@ void ShoppingOverlay::Draw()
         }
     objs:
         text += "\nCursor\n";
-        if (memory.IsObjPtr(cursor))
+        if (memory.AsObjPtr(cursor))
         {
             f("Object", "%d", cursor->idx);
             f("Type", memory.GetObjName(cursor));
@@ -95,7 +95,7 @@ void ShoppingOverlay::Draw()
             text += "BAD\n\n\n";
         }
         text += "\nText\n";
-        if (memory.IsObjPtr(text_obj))
+        if (memory.AsObjPtr(text_obj))
         {
             f("Object", "%d", text_obj->idx);
             f("Type", memory.GetObjName(text_obj));
@@ -106,7 +106,7 @@ void ShoppingOverlay::Draw()
             text += "BAD\n\n\n";
         }
         text += "\nNext\n";
-        if (memory.IsObjPtr(next_obj))
+        if (memory.AsObjPtr(next_obj))
         {
             f("Object", "%d", next_obj->idx);
             f("Type", memory.GetObjName(next_obj));

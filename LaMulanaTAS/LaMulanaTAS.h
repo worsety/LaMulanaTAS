@@ -172,6 +172,15 @@ public:
 class ObjectViewer : public TAS::Overlay
 {
 public:
+    enum
+    {
+        MODE_MIN = -1,
+        STACK = -1,
+        MODE_MAX = 59,
+    };
+    int mode = STACK;
+    int scroll = 0;
+    LaMulanaMemory::object *obj = nullptr;
     ObjectViewer(TAS &tas) : Overlay(tas) {}
     bool ProcessKeys() override;
     void Draw() override;

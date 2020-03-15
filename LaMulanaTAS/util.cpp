@@ -61,7 +61,7 @@ std::string format_field(int width, const char *name, std::string value)
 {
     std::string val = " " + value;
     std::string ret = strprintf("%-*.*s\n", width, width, name);
-    int pos = max(1, width - (int)val.size()),
+    int pos = max(strlen(name) ? 1 : 0, width - (int)val.size()),
         size = width - pos;
     ret.replace(pos, size, val.c_str(), size);
     return ret;
@@ -74,6 +74,26 @@ std::string format_field(int width, const char *name, _In_z_ _Printf_format_stri
     std::string value = vstrprintf(fmt, v);
     va_end(v);
     return format_field(width, name, value);
+}
+
+std::string format_float(double x, int width, int precision)
+{
+    std::string ret;
+    
+    if (precision >= 0)
+    {
+        strprintf("%*.*f", width, precision, x);
+        if (ret.size() == width)
+            return ret;
+        if ((int)ret.find('.') <= width) {
+            ret.resize(width);
+            return ret;
+        }
+    }
+    ret = strprintf("%*.*g", width, width - 4, x);
+    if (ret.size() == width)
+        return ret;
+    return strprintf("%*.*g", width, 2 * width - ret.size() - 4, x);
 }
 
 std::string getwinerror(HRESULT hr)

@@ -46,9 +46,9 @@ public:
             // I think only lemeza and moving platforms even implement these, also why is there a prev_z?
             float prev_x, prev_y, prev_z;
             // don't pay attention to these names, beyond being xy I don't really know
-            // sometimes it seems to be room coordinates when x,y are screen coordinates but sometimes not
+            // sometimes it seems to be scene coordinates when x,y are screen coordinates but sometimes not
             // also z is just my inference, nothing uses it
-            float room_x, room_y, room_z;
+            float scene_x, scene_y, scene_z;
             int hp;
             drawdata drawdata;
             unsigned anim_frame;
@@ -65,28 +65,38 @@ public:
             char extant;
             object *queue_next, *queue_prev; // used for processing order within a priority
             char db[3]; // I have specifics but they're wrong
-            char zone, room, screen;
+            char zone, scene, screen;
             char unk2fa[0x308-0x2fa];
             int draw_priority;
             int unk30c;
-            int screen_x, screen_y; // definitely ignore these names apart from the x/y part
+            float screen_x, screen_y; // definitely ignore these names apart from the x/y part
             int unk318[6]; // performance counters I think
             // set to the same as create during allocation, but never used
             // you'd think this means it's for rtti but create is used for that too
             void (*create2)(object*);
         };
 
-        // poorly named, the return value is the offset from the first free object in the allocation queue
         // implementation is a bit wonky because objects is a non-static member
+        object* AllocNext()
+        {
+            return &this[this->alloc_next - this->idx];
+        }
+
+        object* AllocPrev()
+        {
+            return &this[this->alloc_prev - this->idx];
+        }
+
+        // poorly named, the return value is the offset from the first free object in the allocation queue
         int GetDepth()
         {
             auto obj = this;
             int ret = 0;
             if (extant)
-                while (obj = &obj[obj->alloc_next - obj->idx], obj->extant)
+                while (obj = obj->AllocNext(), obj->extant)
                     ret++;
             else
-                for (; !obj->extant; obj = &obj[obj->alloc_prev - obj->idx])
+                for (; !obj->extant; obj = obj->AllocPrev())
                     ret--;
             return ret;
         }
@@ -103,7 +113,7 @@ public:
 
     struct mapid
     {
-        char zone, room, screen;
+        char zone, scene, screen;
     };
 
     struct screen
@@ -122,7 +132,7 @@ public:
         int unk14;
     };
 
-    struct room
+    struct scene
     {
         unsigned char unk00;
         unsigned char layers;
@@ -142,10 +152,10 @@ public:
     {
         unsigned char texsheet_idx;
         unsigned char unk01;
-        unsigned char num_rooms;
+        unsigned char num_scenes;
         unsigned char num_anims;
         unsigned char unk04[4];
-        room *rooms;
+        scene *scenes;
         void *anims;
         void *unk10;
         int index;
@@ -243,10 +253,10 @@ public:
     map &map_timeattack = *(map*)(base + 0xdb5984);
     zone *&map_boss = *(zone**)(base + 0xdb5994);
     short &boss_mapidx = *(short*)(base + 0x6d59a0);
-    short &boss_room = *(short*)(base + 0x6d4dd0);
+    short &boss_scene = *(short*)(base + 0x6d4dd0);
     unsigned char(&tile_overlay)[64][48] = *(unsigned char(*)[64][48])(base + 0xdb4d68); //colwise
     char &cur_zone = *(char*)(base + 0xdb4bb7);
-    char &cur_room = *(char*)(base + 0xdb4bb3);
+    char &cur_scene = *(char*)(base + 0xdb4bb3);
     char &cur_screen = *(char*)(base + 0xdb4bb6);
 
     unsigned char &scroll_dbidx = *(unsigned char*)(base + 0xdb4c7a);
@@ -374,18 +384,18 @@ public:
         return in_timeattack ? map_timeattack : map_main;
     }
 
-    room *getroom()
+    scene *getscene()
     {
         if (flags1[1] & 0x400)
-            return &map_boss[boss_mapidx].rooms[boss_room];
+            return &map_boss[boss_mapidx].scenes[boss_scene];
         else if (cur_zone >= 0)
-            return &getmap().zones[cur_zone].rooms[cur_room];
+            return &getmap().zones[cur_zone].scenes[cur_scene];
         return nullptr;
     }
 
     unsigned char gettile_map(int x, int y)
     {
-        room *here = getroom();
+        scene *here = getscene();
         return here ? here->hit_tiles[y * here->w + x] : 0;
     }
 
@@ -443,10 +453,11 @@ public:
         }
     };
 
-    bool IsObjPtr(void *ptr)
+    object* AsObjPtr(void *ptr)
     {
         int offset = (char*)ptr - (char*)&objects[0];
-        return offset >= 0 && offset < sizeof(object[0x600]) && offset % sizeof(object) == 0;
+        return offset >= 0 && offset < sizeof(object[0x600]) && offset % sizeof(object) == 0
+            ? (object*)ptr : nullptr;
     }
 
     std::map<void(*)(object*), std::string> obj_names;

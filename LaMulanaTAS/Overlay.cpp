@@ -282,11 +282,11 @@ void TAS::DrawOverlay()
     if (show_tiles)
     {
         auto hit_tex = show_tiles == 1 ? hit_parts : hit_hex;
-        const auto room = memory.getroom();
+        const auto scene = memory.getscene();
         const auto scroll = memory.flags1[1] & 0x400 ? LaMulanaMemory::scrolling() : memory.scroll_db[memory.scroll_dbidx];
         int w = 64, h = 48;
-        if (room)
-            w = room->w, h = room->h;
+        if (scene)
+            w = scene->w, h = scene->h;
 
         std::vector<USHORT> idx(6 * 64 * 48);
         std::vector<xyzrhwdiffuv> vert(4 * 64 * 48);
@@ -507,8 +507,8 @@ void TAS::DrawOverlay()
 
     if (show_exits)
     {
-        auto room = memory.getroom();
-        if (room)
+        auto scene = memory.getscene();
+        if (scene)
         {
             static const struct { int idx; float x, y; int align; }
             exits[] = {
@@ -519,10 +519,10 @@ void TAS::DrawOverlay()
             };
             for (auto i : exits)
             {
-                auto exit = room->screens[memory.cur_screen].exits[i.idx];
-                font8x12->Add(i.x, i.y, i.align, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%2d,%2d,%2d", exit.zone, exit.room, exit.screen));
+                auto exit = scene->screens[memory.cur_screen].exits[i.idx];
+                font8x12->Add(i.x, i.y, i.align, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%2d,%2d,%2d", exit.zone, exit.scene, exit.screen));
             }
-            font8x12->Add(288, 234, 0, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%2d,%2d,%2d", memory.cur_zone, memory.cur_room, memory.cur_screen));
+            font8x12->Add(288, 234, 0, D3DCOLOR_ARGB(255, 255, 255, 255), strprintf("%2d,%2d,%2d", memory.cur_zone, memory.cur_scene, memory.cur_screen));
             font8x12->Draw(D3DCOLOR_ARGB(96, 0, 0, 0));
             HR(oldstate->Apply());
         }
