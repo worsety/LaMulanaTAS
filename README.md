@@ -48,13 +48,21 @@ E | Toggle screen exit display
 L | Toggle visual indication of Lemeza's location
 G | Toggle visibility of game graphics
 S | Toggle remote shopping overlay
+O | Toggle object viewer
 
-# Scripting
+# Object Viewer
+
+Key        | Action
+:---:      | :---
+Left/Right | Change object list
+Up/Down    | Scroll through object list
+
+## Scripting
 
 The TAS script goes in the game installation directory and must be named `script.txt`.  For now having a script is mandatory even if it's an empty file.
 
 It'd be nice if this was documented.  Probably only needs sparse documentation here covering non-obvious things like order of operations and a sample script.txt in the distribution.
 
-# Legal
+## Legal
 
 See the LICENSE file.
