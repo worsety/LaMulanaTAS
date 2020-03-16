@@ -464,7 +464,7 @@ public:
         size_t size;
         char *text = read_file_or_res("objects.txt", MAKEINTRESOURCE(ID_OBJECTS), MAKEINTRESOURCE(RT_RAW), &size);
         unsigned int n;
-        char name[21];
+        char name[61];
         void(*ptr)(object*);
         int read;
 
