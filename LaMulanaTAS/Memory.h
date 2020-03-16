@@ -464,11 +464,11 @@ public:
         size_t size;
         char *text = read_file_or_res("objects.txt", MAKEINTRESOURCE(ID_OBJECTS), MAKEINTRESOURCE(RT_RAW), &size);
         unsigned int n;
-        char name[61];
+        char name[21];
         void(*ptr)(object*);
         int read;
 
-        for (char *p = text; 2 == sscanf_s(p, "%x%60s%n", &n, name, sizeof name, &read); p += read)
+        for (char *p = text; 2 == sscanf_s(p, "%x %20[^ \t\r\n]%*[^\n]%n", &n, name, sizeof name, &read); p += read)
         {
             if (n < sizeof objtypes / sizeof *objtypes)
                 ptr = objtypes[n];

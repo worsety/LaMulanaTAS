@@ -103,7 +103,7 @@ void ObjectViewer::Draw()
         }
         for (auto *o = first; o;)
         {
-            text += strprintf("%3x %2d %+5d %3s\n%16s\n", o->idx, o->priority, o->GetDepth(), o == obj ? "<--" : "", memory.GetObjName(o).data());
+            text += strprintf("%3x %2d %+5d %3s\n%16.16s\n", o->idx, o->priority, o->GetDepth(), o == obj ? "<--" : "", memory.GetObjName(o).data());
             if (o == last)
                 break;
             switch (mode)
