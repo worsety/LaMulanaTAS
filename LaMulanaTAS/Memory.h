@@ -468,7 +468,7 @@ public:
         void(*ptr)(object*);
         int read;
 
-        for (char *p = text; 2 == sscanf_s(p, "%x%20s%n", &n, name, sizeof name, &read); p += read)
+        for (char *p = text; 2 == sscanf_s(p, "%x%60s%n", &n, name, sizeof name, &read); p += read)
         {
             if (n < sizeof objtypes / sizeof *objtypes)
                 ptr = objtypes[n];
