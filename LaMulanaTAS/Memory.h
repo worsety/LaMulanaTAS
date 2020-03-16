@@ -282,8 +282,6 @@ public:
     void (*const create_shop)(object*) = (void(*)(object*))(base + 0x5c1fe0);
     void (*const create_mother5)(object*) = (void(*)(object*))(base + 0x54ea60);
 
-    // This function is empty, I'm literally calling it just to prevent the compiler from assuming it knows what registers are and aren't destroyed wtf
-    void (*const noop)() = (void (*)())(base + 0x4f6540);
     DWORD(__stdcall ** const XInputGetState)(DWORD, XINPUT_STATE*) = (DWORD(__stdcall**)(DWORD, XINPUT_STATE*))(base + 0x6ac1e8);
 
     /*
@@ -416,16 +414,15 @@ public:
         return vararray<solid>(solids_db[solids_dbidx ^ 1], solids_count[solids_dbidx ^ 1]);
     }
 
-    void loadgfx(const char *filename, texture *tex)
+    void __thiscall loadgfx(const char *filename, texture *tex)
     {
-        auto loadgfx_ = (void (*)())(base + 0x458e30);
         __asm {
-            mov eax, loadgfx_;
-            mov ecx, filename;
-            mov esi, tex;
-            call eax;
+            mov eax, [ecx].base
+            add eax, 0x458e30
+            mov ecx, filename
+            mov esi, tex
+            call eax
         }
-        noop();
     }
 
     class objfixup {
