@@ -55,19 +55,11 @@ static const WORD XINPUT_DPAD[] = {
 #define MAIN_OVERLAY_TOP 426
 #define OVERLAY_BOTTOM 474
 
+class Overlay;
+
 class TAS
 {
 public:
-    class Overlay
-    {
-    public:
-        TAS &tas;
-        LaMulanaMemory &memory;
-        Overlay(TAS &tas) : tas(tas), memory(tas.memory) {}
-        virtual bool ProcessKeys() { return false; } // return true to inhibit the main overlay's processing
-        virtual void Draw() {};
-    };
-
     LaMulanaMemory memory;
     int frame, frame_count, rngsteps;
     std::map<int, std::string> sections;
@@ -162,14 +154,24 @@ public:
     void LoadTAS();
 };
 
-class ShoppingOverlay : public TAS::Overlay
+class Overlay
+{
+public:
+    TAS &tas;
+    LaMulanaMemory &memory;
+    Overlay(TAS &tas) : tas(tas), memory(tas.memory) {}
+    virtual bool ProcessKeys() { return false; } // return true to inhibit the main overlay's processing
+    virtual void Draw() {};
+};
+
+class ShoppingOverlay : public Overlay
 {
 public:
     ShoppingOverlay(TAS &tas) : Overlay(tas) {}
     void Draw() override;
 };
 
-class ObjectViewer : public TAS::Overlay
+class ObjectViewer : public Overlay
 {
 public:
     enum
