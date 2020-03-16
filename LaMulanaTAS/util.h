@@ -3,7 +3,7 @@
 #include <vector>
 #include <sal.h>
 #include <memory>
-#include <exception>
+#include <stdexcept>
 #include <d3d9.h>
 #include <atlbase.h>
 
