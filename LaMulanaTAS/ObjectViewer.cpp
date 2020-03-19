@@ -67,6 +67,9 @@ void ObjectViewer::Draw()
         {
             case STACK:
                 newobj = scroll > 0 ? obj->AllocNext() : obj->AllocPrev();
+                if (scroll > 0 && newobj->extant > obj->extant
+                    || scroll < 0 && newobj->extant < obj->extant)
+                    newobj = nullptr;
                 break;
             default:
                 newobj = scroll > 0 ? obj->queue_next : obj->queue_prev;
