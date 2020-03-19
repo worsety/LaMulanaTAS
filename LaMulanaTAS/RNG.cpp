@@ -11,27 +11,27 @@ enum
 bool RNGOverlay::ProcessKeys()
 {
     bool ret = false;
-    if (tas.Poll(VK_RIGHT, true))
+    if (tas.Poll(VK_RIGHT, true, TAS::POLL_REPEAT))
     {
         ret = true;
         if (++mode >= (int)modes.size())
             mode = 0;
         condition = 0;
     }
-    if (tas.Poll(VK_LEFT, true))
+    if (tas.Poll(VK_LEFT, true, TAS::POLL_REPEAT))
     {
         ret = true;
         if (--mode < 0)
             mode = modes.size() - 1;
         condition = 0;
     }
-    if (tas.Poll(VK_DOWN, true))
+    if (tas.Poll(VK_DOWN, true, TAS::POLL_REPEAT))
     {
         ret = true;
         if (++condition >= (int)modes[mode].conditions.size())
             condition = 0;
     }
-    if (tas.Poll(VK_UP, true))
+    if (tas.Poll(VK_UP, true, TAS::POLL_REPEAT))
     {
         ret = true;
         if (--condition < 0)

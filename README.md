@@ -47,12 +47,20 @@ Shift+Key | Action
 E | Toggle screen exit display
 L | Toggle visual indication of Lemeza's location
 G | Toggle visibility of game graphics
+R | Toggle RNG overlay
 S | Toggle remote shopping overlay
 O | Toggle object viewer
 
+# RNG Overlay
+
+Shift+Key  | Action
+:---:      | :---
+Left/Right | Change roll type
+Up/Down    | Change desired roll result
+
 # Object Viewer
 
-Key        | Action
+Shift+Key  | Action
 :---:      | :---
 Left/Right | Change object list
 Up/Down    | Scroll through object list

@@ -3,7 +3,7 @@
 bool ObjectViewer::ProcessKeys()
 {
     bool ret = false;
-    if (tas.Poll(VK_LEFT, false, TAS::POLL_REPEAT))
+    if (tas.Poll(VK_LEFT, true, TAS::POLL_REPEAT))
     {
         if (--mode < MODE_MIN)
             mode = MODE_MAX;
@@ -11,7 +11,7 @@ bool ObjectViewer::ProcessKeys()
             obj = memory.AsObjPtr(&memory.objects[(*memory.obj_queue)[mode]]);
         ret = true;
     }
-    if (tas.Poll(VK_RIGHT, false, TAS::POLL_REPEAT))
+    if (tas.Poll(VK_RIGHT, true, TAS::POLL_REPEAT))
     {
         if (++mode > MODE_MAX)
             mode = MODE_MIN;
@@ -21,12 +21,12 @@ bool ObjectViewer::ProcessKeys()
     }
     // scrolling is delayed until overlay display because objects may be created or destroyed before then
     scroll = 0;
-    if (tas.Poll(VK_UP, false, TAS::POLL_REPEAT))
+    if (tas.Poll(VK_UP, true, TAS::POLL_REPEAT))
     {
         scroll = -1;
         ret = true;
     }
-    if (tas.Poll(VK_DOWN, false, TAS::POLL_REPEAT))
+    if (tas.Poll(VK_DOWN, true, TAS::POLL_REPEAT))
     {
         scroll = 1;
         ret = true;
