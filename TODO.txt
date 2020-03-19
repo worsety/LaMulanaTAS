@@ -7,5 +7,7 @@ Better uninitialised data hooking: afaics, every object is created through obj_a
     Accurate scrolling collision overlay (optional because it's ugly)
     Preview of screen (1/10 collision map?) for exits display
     Also set boot rng when we first set rng.  Time attack rng can be set at @0 like anything else then
+    Object viewer: key to go to top of stack view
+    Object viewer: way to track most recently created object in stack view?
 Bugs:
     Why does resetting in game after remote shopping desync shops by one frame if you then TAS reset?

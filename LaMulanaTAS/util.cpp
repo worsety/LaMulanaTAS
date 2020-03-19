@@ -96,6 +96,35 @@ std::string format_float(double x, int width, int precision)
     return strprintf("%*.*g", width, 2 * width - ret.size() - 4, x);
 }
 
+std::string linewrap(std::string str, size_t width, bool word_wrap)
+{
+    std::string ret;
+    size_t pos = 0, end;
+    while (pos < str.size())
+    {
+        if (0 != pos)
+        {
+            if (word_wrap)
+                pos = str.find_first_not_of(" \t\r\n", pos);
+            if (-1 == pos)
+                break;
+            ret += "\n";
+        }
+        end = -1;
+        if (word_wrap && pos + width < str.size())
+        {
+            end = str.find_last_of(" \t\r\n", pos + width);
+            if (-1 != end && end > pos)
+                end = str.find_last_not_of(" \t\r\n", end - 1);
+        }
+        if (-1 == end || end < pos)
+            end = pos + width - 1;
+        ret += str.substr(pos, end + 1 - pos);
+        pos = end + 1;
+    }
+    return ret;
+}
+
 std::string getwinerror(HRESULT hr)
 {
     LPSTR messageBuffer = nullptr;

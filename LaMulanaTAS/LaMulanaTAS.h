@@ -48,7 +48,7 @@ static const WORD XINPUT_DPAD[] = {
     XINPUT_GAMEPAD_DPAD_RIGHT,
 };
 
-// 79x32+4 cells of 8x12
+// 78x32+4 cells of 8x12
 #define OVERLAY_LEFT 8
 #define OVERLAY_RIGHT 632
 #define OVERLAY_TOP 42
@@ -139,7 +139,7 @@ public:
     bool show_overlay = true, show_exits, show_solids, show_loc, hide_game;
     int show_tiles;
     unsigned show_hitboxes = 1 << 7 | 1 << 9 | 1 << 11;  // unknown types, I want to know if anyone sees them
-    Overlay *shopping_overlay, *object_viewer;
+    Overlay *shopping_overlay, *object_viewer, *rng_overlay;
     Overlay *extra_overlay;
 
     TAS(char *base);
@@ -184,6 +184,31 @@ public:
     int scroll = 0;
     LaMulanaMemory::object *obj = nullptr;
     ObjectViewer(TAS &tas) : Overlay(tas) {}
+    bool ProcessKeys() override;
+    void Draw() override;
+};
+
+struct RNGOverlay : public Overlay
+{
+    struct Result : public std::vector<int>
+    {
+        operator std::string();
+    };
+    struct Condition
+    {
+        const char *name;
+        std::function<bool(const Result&)> test;
+    };
+    struct Mode
+    {
+        const char *name;
+        std::function<Result(short)> roll;
+        std::vector<Condition> conditions;
+    };
+    std::vector<Mode> modes;
+    int mode = 0;
+    int condition = 0;
+    RNGOverlay(TAS &tas);
     bool ProcessKeys() override;
     void Draw() override;
 };

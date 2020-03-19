@@ -497,3 +497,17 @@ public:
         return obj->create ? ret : strprintf("(%s)", ret.data());
     }
 };
+
+static void advance_rng(short &rng, int steps)
+{
+    for (; steps > 0; steps--)
+        rng = rng * 109 + 1021 & 0x7fff;
+    for (; steps < 0; steps++)
+        rng = (rng + 31747) * 2405 & 0x7fff;
+}
+
+static int roll(short &rng, int sides)
+{
+    advance_rng(rng, 1);
+    return (rng * 109 + 1021) % 0x7fff % sides;
+}

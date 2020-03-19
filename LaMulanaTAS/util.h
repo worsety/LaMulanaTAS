@@ -13,6 +13,8 @@ std::string format_field(int width, const char *name, const std::string value);
 std::string format_field(int width, const char *name, _In_z_ _Printf_format_string_ const char * const fmt, ...);
 std::string format_float(double x, int width, int precision = -1);
 
+std::string linewrap(std::string str, size_t width, bool word_wrap = false);
+
 static std::string hexfloat(float &f)
 {
     unsigned x = *(unsigned*)&f;

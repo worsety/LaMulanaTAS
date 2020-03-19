@@ -70,6 +70,8 @@ void TAS::ProcessKeys()
         extra_overlay = extra_overlay == shopping_overlay ? nullptr : shopping_overlay;
     if (Poll('O', true))
         extra_overlay = extra_overlay == object_viewer ? nullptr : object_viewer;
+    if (Poll('R', true))
+        extra_overlay = extra_overlay == rng_overlay ? nullptr : rng_overlay;
 }
 
 static const RECT unscaled_game{ 0, 0, 640, 480 };

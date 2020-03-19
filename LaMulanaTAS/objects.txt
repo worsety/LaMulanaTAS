@@ -16,6 +16,7 @@
 10      spikes
 11      crusher
 12      hurtbox
+
 14      profdetector
 15      argus
 16      axehead

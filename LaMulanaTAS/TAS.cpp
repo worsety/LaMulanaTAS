@@ -56,6 +56,7 @@ TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
 
     shopping_overlay = new ShoppingOverlay(*this);
     object_viewer = new ObjectViewer(*this);
+    rng_overlay = new RNGOverlay(*this);
 }
 
 unsigned char hardcoded_bindings[] = {
@@ -162,9 +163,9 @@ void TAS::LoadTAS()
     int linenum = 0;
     std::string line, token;
     frame_keys.clear();
-    frame_keys.emplace(0, std::unordered_set<unsigned char*>());
+    frame_keys.emplace(0, 1);
     frame_btns.clear();
-    frame_btns.emplace(0, std::unordered_set<unsigned char*>());
+    frame_btns.emplace(0, 1);
     frame_actions.clear();
     sections.clear();
     objfixups.clear();
@@ -346,11 +347,8 @@ void TAS::LoadTAS()
                     int seed = m[1].length() ? std::stoi(m[2]) : -1;
                     int stepcount = m[3].length() ? std::stoi(m[3]) : 0;
                     frame_actions.emplace(curframe, 0).first->second.push_back([this, seed, stepcount]() {
-                        int rng = seed >= 0 ? seed : memory.rng, steps = stepcount;
-                        for (; steps > 0; --steps)
-                            rng = rng * 109 + 1021 & 0x7fff;
-                        for (; steps < 0; ++steps)
-                            rng = (rng + 31747) * 2405 & 0x7fff;
+                        short rng = seed >= 0 ? (short)seed : memory.rng;
+                        advance_rng(rng, stepcount);
                         memory.rng = rng;
                         currng = -1;
                     });

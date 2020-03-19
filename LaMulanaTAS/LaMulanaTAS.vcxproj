@@ -104,6 +104,7 @@ COPY /Y "$(SolutionDir)\README.md" "$(SolutionDir)\dist\"</Command>
   <ItemGroup>
     <ClCompile Include="Exports.cpp" />
     <ClCompile Include="ObjectViewer.cpp" />
+    <ClCompile Include="RNG.cpp" />
     <ClCompile Include="Shopping.cpp" />
     <ClCompile Include="TAS.cpp">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Default</CompileAs>
