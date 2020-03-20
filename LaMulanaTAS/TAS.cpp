@@ -435,7 +435,7 @@ DWORD TAS::GetXInput(DWORD idx, XINPUT_STATE *state)
 
 int TAS::LagFrames()
 {
-    return (int)round((cur_time.QuadPart - start_time.QuadPart) / (1001 * timer_freq.QuadPart / 60000.) - frame_count);
+    return (int)round((cur_time.QuadPart - start_time.QuadPart) / (1001 * timer_freq.QuadPart / 60000.) - frame);
 }
 
 void TAS::IncFrame()
@@ -452,6 +452,8 @@ void TAS::IncFrame()
     ProcessKeys();
 
     frame++;
+    if (0 == frame)
+        start_time = cur_time;
 
     auto action_iter = frame_actions.find(frame);
     if (action_iter != frame_actions.end())
@@ -474,8 +476,6 @@ void TAS::IncFrame()
         frame_count++;
         resetting = false;
     }
-    if (0 == frame_count)
-        start_time = cur_time;
     if (currng < 0)
     {
         currng = memory.rng;
