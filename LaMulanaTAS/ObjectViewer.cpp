@@ -31,6 +31,12 @@ bool ObjectViewer::ProcessKeys()
         scroll = 1;
         ret = true;
     }
+    if (tas.Poll('K', true))
+    {
+        if (memory.AsObjPtr(obj))
+            memory.obj_destroy(obj);
+        ret = true;
+    }
     return ret;
 }
 

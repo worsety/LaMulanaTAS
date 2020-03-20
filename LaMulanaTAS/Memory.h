@@ -425,6 +425,16 @@ public:
         }
     }
 
+    void __thiscall obj_destroy(object *obj)
+    {
+        __asm {
+            mov eax, [ecx].base
+            add eax, 0x607b50
+            mov esi, obj
+            call eax
+        }
+    }
+
     class objfixup {
         LaMulanaMemory *memory;
         int type;
