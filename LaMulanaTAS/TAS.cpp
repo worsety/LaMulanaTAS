@@ -46,7 +46,7 @@ ok2,ok3,cancel2,cancel3
 esc,f1-f9
 */
 
-TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
+TAS::TAS(char *base) : memory(base), frame(-1), frame_count(-1)
 {
     DWORD keyboard_delay, keyboard_speed;
     GLE(SystemParametersInfo(SPI_GETKEYBOARDDELAY, 0, &keyboard_delay, 0));
@@ -57,6 +57,7 @@ TAS::TAS(char *base) : memory(base), frame(-1), frame_count(0)
     shopping_overlay = new ShoppingOverlay(*this);
     object_viewer = new ObjectViewer(*this);
     rng_overlay = new RNGOverlay(*this);
+    QueryPerformanceFrequency(&timer_freq);
 }
 
 unsigned char hardcoded_bindings[] = {
@@ -432,8 +433,14 @@ DWORD TAS::GetXInput(DWORD idx, XINPUT_STATE *state)
     return ret;
 }
 
+int TAS::LagFrames()
+{
+    return (int)round((cur_time.QuadPart - start_time.QuadPart) / (1001 * timer_freq.QuadPart / 60000.) - frame_count);
+}
+
 void TAS::IncFrame()
 {
+    QueryPerformanceCounter(&cur_time);
     if (!initialised)
     {
         memory.LoadObjNames();
@@ -467,6 +474,8 @@ void TAS::IncFrame()
         frame_count++;
         resetting = false;
     }
+    if (0 == frame_count)
+        start_time = cur_time;
     if (currng < 0)
     {
         currng = memory.rng;

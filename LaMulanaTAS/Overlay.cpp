@@ -49,7 +49,7 @@ void TAS::ProcessKeys()
         memory.has_quicksave = 0;
         memory.timeattack_cursor = -1;
         frame = -2;
-        frame_count = 0;
+        frame_count = -1;
         run = resetting = true;
     }
     if (Poll('U'))
@@ -66,6 +66,8 @@ void TAS::ProcessKeys()
         show_loc = !show_loc;
     if (Poll('G', true))
         hide_game = !hide_game;
+    if (Poll('V', true))
+        memory.setvsync(true), ff = false;
     if (Poll('S', true))
         extra_overlay = extra_overlay == shopping_overlay ? nullptr : shopping_overlay;
     if (Poll('O', true))
@@ -430,9 +432,15 @@ void TAS::DrawOverlay()
         auto sec = sections.upper_bound(frame);
         if (sec != sections.begin())
             --sec;
-        text += strprintf(
-            "Frame %7d @%d%s",
-            frame_count, frame, sec == sections.end() ? "" : strprintf(" %s:%d", sec->second.data(), frame - sec->first).data());
+        if (memory.getvsync())
+            text += strprintf(
+                "Frame %7d%-+5d @%d%s",
+                frame_count, LagFrames(), frame,
+                sec == sections.end() ? "" : strprintf(" %s:%d", sec->second.data(), frame - sec->first).data());
+        else
+            text += strprintf(
+                "Frame %7d      @%d%s", frame_count, frame,
+                sec == sections.end() ? "" : strprintf(" %s:%d", sec->second.data(), frame - sec->first).data());
 
         font8x12->Add(OVERLAY_LEFT, OVERLAY_BOTTOM, BMFALIGN_BOTTOM | BMFALIGN_LEFT, D3DCOLOR_ARGB(255, 255, 255, 255), text);
 

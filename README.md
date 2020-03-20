@@ -50,6 +50,7 @@ G | Toggle visibility of game graphics
 R | Toggle RNG overlay
 S | Toggle remote shopping overlay
 O | Toggle object viewer
+V | Restore VSync after using fast-forward
 
 # RNG Overlay
 
@@ -64,6 +65,7 @@ Shift+Key  | Action
 :---:      | :---
 Left/Right | Change object list
 Up/Down    | Scroll through object list
+K          | Destroy selected object (for testing purposes)
 
 ## Scripting
 

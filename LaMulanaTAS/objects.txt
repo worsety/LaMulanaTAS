@@ -202,6 +202,7 @@ ca      ankhtamom
 cb      hellspriteshift
 
 4403d0  screenscroll
+44a470  savemenu
 455960  drop
 4736f0  fieldtileanimator
 479940  spotlight

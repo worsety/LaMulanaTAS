@@ -328,9 +328,14 @@ public:
         }
     }
 
+    bool getvsync()
+    {
+        return D3DPRESENT_INTERVAL_IMMEDIATE != ((D3DPRESENT_PARAMETERS*)(base + 0xdb49c4))->PresentationInterval;
+    }
+
     void setvsync(bool vsync)
     {
-        UINT presentint = vsync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
+        UINT presentint = vsync ? D3DPRESENT_INTERVAL_DEFAULT : D3DPRESENT_INTERVAL_IMMEDIATE;
         if (((D3DPRESENT_PARAMETERS*)(base + 0xdb49c4))->PresentationInterval != presentint)
         {
             ((D3DPRESENT_PARAMETERS*)(base + 0xdb49c4))->PresentationInterval = presentint;

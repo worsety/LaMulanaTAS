@@ -81,6 +81,7 @@ public:
     CComPtr<IDirect3DTexture9> overlay;
     CComPtr<IDirect3DSurface9> overlay_surf;
     int repeat_delay, repeat_speed;
+    LARGE_INTEGER start_time, cur_time, timer_freq;
 
     struct keystate {
         union {
@@ -152,6 +153,8 @@ public:
     void ProcessKeys();
 
     void LoadTAS();
+
+    int LagFrames();
 };
 
 class Overlay
