@@ -4,7 +4,7 @@ TAS *tas = nullptr;
 
 void __stdcall TasInit(int patchver)
 {
-    if (patchver != 3)
+    if (patchver != 4)
     {
         MessageBox(nullptr, L"DLL and EXE versions do not match\nPlease repatch your EXE.", nullptr, MB_OK);
         ExitProcess(1);
@@ -36,7 +36,7 @@ int __stdcall TasRender(void)
 
 DWORD __stdcall TasTime(void)
 {
-    return tas->frame_count * 17;
+    return tas->frame_count * 1001 / 60;
 }
 
 void TasSleep(int duration)

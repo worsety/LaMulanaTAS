@@ -18,8 +18,6 @@ Offset	RVA
 0d8ce3	4d98e3	winproc: Don't pause or losing focus or minimising
 0d8d5b	4d995b	winproc: Write to winproc_inputdev instead of cur_inputdev
 0d8f4e	4d9b4e	WinMain: call load_tas instead of start_main_thread
-0fd570	4fe170	black screen transition calculation
-		Checks for 500ms of real time using a global (so two instances gives us screen mashing), replace all timeGetTime calls with TasTime
 168fef	569bef	poll_pads: Call XInputGetState wrapper
 169005	569c05	poll_pads: Disable vibration on our fake pad
 26e5d3	66f1d3	read_pads: Replace unused counter increment with TasIncFrame call
@@ -34,6 +32,19 @@ Offset	RVA
 	db9078	TasXInputGetState
 	db907c	winproc_inputdev
 33f1dc		Additions to relocation table
+
+timeGetTime and GetTickCount replacements:
+07e6a6	47f2a6	object method call stats (potentially affects object memory for pointer manipulation TASes, but not really)
+07e8a1	47f4a1	"
+207055	607c55	"
+2072b7	607eb7	"
+2075d7	6081d7	"
+0fd570	4fe170	black screen transition calculation
+		Checks for 500ms of real time using a global (so two instances gives us screen mashing)
+11d43a	51e03a	msxmenu_update: something to do with emusic I think, song lengths are involved.  Anyway it potentially affects pointerm manipulation TASes, but again not really
+11d556	51e156	"
+11d684	51e284	"
+Other calls shouldn't be able to affect TASes
 
 Known bugs that affect TASing:
 Tai Sui's eyes reference the member at offset E8 in Tai Sui on creation... which is before Tai Sui initialises this member so they get the value from whatever last occupied that memory and set it.
